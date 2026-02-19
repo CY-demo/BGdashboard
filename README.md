@@ -1,4 +1,4 @@
-# 🎲 Board Game Tracker
+#  Board Game Tracker
 
 A Python app to track board game scores, analyze player performance, and recommend games using ML.
 
@@ -6,7 +6,7 @@ A Python app to track board game scores, analyze player performance, and recomme
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Clone the repo
 ```bash
@@ -38,7 +38,7 @@ streamlit run app.py
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 board-game-tracker/
@@ -63,7 +63,7 @@ board-game-tracker/
 
 ---
 
-## 🧠 How the Recommendation Works
+##  How the Recommendation Works
 
 1. **Game Attributes** — Each game has a feature vector (8 dimensions):
    `strategy`, `luck`, `negotiation`, `deduction`, `deck_building`, `cooperation`, `complexity`, `duration`
@@ -78,17 +78,17 @@ board-game-tracker/
 
 ---
 
-## 👥 Team Roles
+##  Team Roles
 
 | Member | Area |
 |--------|------|
-| You | ML Recommendation Engine (`recommender.py`, `data/`) |
-| Member B | Database + Backend (`db/`, MySQL schema, CRUD) |
-| Member C | Frontend UI (`app.py`, `pages/`, Plotly charts) |
+| CY | ML Recommendation Engine (`recommender.py`, `data/`) |
+| R | Database + Backend (`db/`, MySQL schema, CRUD) |
+| yza| Frontend UI (`app.py`, `pages/`, Plotly charts) |
 
 ---
 
-## 🔧 Git Workflow
+##  Git Workflow
 
 ```bash
 # Before starting work
@@ -107,7 +107,7 @@ git push origin feature/your-feature-name
 
 ---
 
-## 📦 Key Libraries
+##  Key Libraries
 
 | Library | Purpose |
 |---------|---------|
@@ -117,3 +117,4 @@ git push origin feature/your-feature-name
 | `plotly` | Interactive charts |
 | `mysql-connector-python` | MySQL database connection |
 | `python-dotenv` | Load credentials from `.env` |
+
