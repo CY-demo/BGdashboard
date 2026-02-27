@@ -11,7 +11,14 @@ Two-tier approach:
 Usage:
     from recommender import Recommender
     rec = Recommender(session_results_df, game_attributes_dict)
+
+    # Existing player (has history)
     suggestions = rec.recommend(player_name="Alice", top_n=3)
+
+    # New player (cold start — profile from questionnaire)
+    from cold_start import ColdStart
+    profile = ColdStart.build_profile_from_answers(answers_dict)
+    suggestions = rec.recommend_from_profile(profile, top_n=3)
 """
 
 import numpy as np
@@ -71,6 +78,48 @@ class Recommender:
                 print(f"[Recommender] ML failed ({e}), falling back to statistical.")
 
         return self._statistical_recommend(player_name, unplayed, top_n)
+
+    def recommend_from_profile(self, profile: "np.ndarray", top_n: int = 3,
+                                played: list = None):
+        """
+        Recommend games directly from a pre-built profile vector.
+        Used for cold-start players who answered the questionnaire.
+
+        Parameters
+        ----------
+        profile : np.ndarray
+            Feature vector of length len(FEATURE_KEYS), e.g. from ColdStart.
+        top_n : int
+            Number of recommendations to return.
+        played : list, optional
+            Games to exclude (already played). Leave None to recommend from all.
+        """
+        exclude = set(played or [])
+        unplayed = [g for g in self.game_attrs if g not in exclude]
+
+        unplayed_df = self._game_df.loc[
+            self._game_df.index.isin(unplayed), FEATURE_KEYS
+        ]
+
+        if unplayed_df.empty:
+            return []
+
+        k = min(top_n, len(unplayed_df))
+        knn = NearestNeighbors(n_neighbors=k, metric="cosine")
+        knn.fit(unplayed_df.values)
+
+        distances, indices = knn.kneighbors([profile])
+        recommended_games = unplayed_df.iloc[indices[0]].index.tolist()
+        similarity_scores = 1 - distances[0]
+
+        return [
+            {
+                "game": game,
+                "score": round(float(sim), 3),
+                "method": "ML Cold-Start (Questionnaire)",
+            }
+            for game, sim in zip(recommended_games, similarity_scores)
+        ]
 
     # ─────────────────────────────────────────────────────────────────────────
     # ML Recommendation (Tier 1)
