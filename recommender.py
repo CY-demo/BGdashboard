@@ -1,33 +1,21 @@
-"""
-recommender.py
---------------
-ML-based board game recommendation engine.
-
-Two-tier approach:
-  Tier 1 (ML):          Cosine Similarity + KNN on game/player feature vectors
-  Tier 2 (Fallback):    Statistical analysis — recommend games similar in
-                        category to games the player already excels at.
-
-Usage:
-    from recommender import Recommender
-    rec = Recommender(session_results_df, game_attributes_dict)
-
-    # Existing player (has history)
-    suggestions = rec.recommend(player_name="Alice", top_n=3)
-
-    # New player (cold start — profile from questionnaire)
-    from cold_start import ColdStart
-    profile = ColdStart.build_profile_from_answers(answers_dict)
-    suggestions = rec.recommend_from_profile(profile, top_n=3)
-"""
+# recommender.py
+# Recommendation engine using KNN or statistical fallback.
 
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import MinMaxScaler
 
-from data.game_attributes import GAME_ATTRIBUTES, FEATURE_KEYS
-
+FEATURE_KEYS = [
+    "strategy",
+    "luck",
+    "negotiation",
+    "deduction",
+    "deck_building",
+    "cooperation",
+    "complexity",
+    "duration_norm"
+]
 
 class Recommender:
     """
@@ -44,14 +32,12 @@ class Recommender:
 
     def __init__(self, results_df: pd.DataFrame, game_attrs: dict = None):
         self.results_df = results_df.copy()
-        self.game_attrs = game_attrs or GAME_ATTRIBUTES
+        self.game_attrs = game_attrs or {}
 
         # Build game feature matrix (DataFrame)
         self._game_df = self._build_game_matrix()
 
-    # ─────────────────────────────────────────────────────────────────────────
     # Public API
-    # ─────────────────────────────────────────────────────────────────────────
 
     def recommend(self, player_name: str, top_n: int = 3, method: str = "auto"):
         """
@@ -121,9 +107,7 @@ class Recommender:
             for game, sim in zip(recommended_games, similarity_scores)
         ]
 
-    # ─────────────────────────────────────────────────────────────────────────
-    # ML Recommendation (Tier 1)
-    # ─────────────────────────────────────────────────────────────────────────
+    # ML Recommendation
 
     def _ml_recommend(self, player_name: str, unplayed: list, top_n: int):
         """
@@ -192,9 +176,7 @@ class Recommender:
         profile = np.average(np.array(vectors), axis=0, weights=weights)
         return profile
 
-    # ─────────────────────────────────────────────────────────────────────────
-    # Statistical Fallback (Tier 2)
-    # ─────────────────────────────────────────────────────────────────────────
+    # Statistical Fallback
 
     def _statistical_recommend(self, player_name: str, unplayed: list, top_n: int):
         """
@@ -241,9 +223,7 @@ class Recommender:
 
         return good_categories
 
-    # ─────────────────────────────────────────────────────────────────────────
-    # Helper Utilities
-    # ─────────────────────────────────────────────────────────────────────────
+    # Utilities
 
     def _games_played_by(self, player_name: str) -> list:
         mask = self.results_df["player_name"] == player_name

@@ -6,7 +6,7 @@
         "deduction": 0.1,
         "deck_building": 0.0,
         "cooperation": 0.0,
-        "complexity": 0.5,
+        "complexity": 0.33,
         "duration_norm": 0.5,
         "category": "Strategy"
     },
@@ -17,8 +17,8 @@
         "deduction": 0.2,
         "deck_building": 0.4,
         "cooperation": 0.0,
-        "complexity": 0.5,
-        "duration_norm": 0.3,
+        "complexity": 0.33,
+        "duration_norm": 0.25,
         "category": "Strategy"
     },
     "Terraforming Mars": {
@@ -28,8 +28,8 @@
         "deduction": 0.3,
         "deck_building": 0.5,
         "cooperation": 0.0,
-        "complexity": 0.8,
-        "duration_norm": 0.8,
+        "complexity": 0.56,
+        "duration_norm": 0.67,
         "category": "Strategy"
     },
     "Dominion": {
@@ -39,20 +39,20 @@
         "deduction": 0.2,
         "deck_building": 1.0,
         "cooperation": 0.0,
-        "complexity": 0.6,
-        "duration_norm": 0.3,
-        "category": "Deck Building"
+        "complexity": 0.34,
+        "duration_norm": 0.17,
+        "category": "Strategy"
     },
     "Splendor": {
         "strategy": 0.7,
         "luck": 0.1,
         "negotiation": 0.1,
         "deduction": 0.3,
-        "deck_building": 0.6,
+        "deck_building": 0.0,
         "cooperation": 0.0,
-        "complexity": 0.4,
-        "duration_norm": 0.3,
-        "category": "Engine Building"
+        "complexity": 0.2,
+        "duration_norm": 0.17,
+        "category": "Strategy"
     },
     "Agricola": {
         "strategy": 0.9,
@@ -61,9 +61,9 @@
         "deduction": 0.3,
         "deck_building": 0.0,
         "cooperation": 0.0,
-        "complexity": 0.9,
-        "duration_norm": 0.7,
-        "category": "Worker Placement"
+        "complexity": 0.66,
+        "duration_norm": 0.5,
+        "category": "Strategy"
     },
     "Viticulture": {
         "strategy": 0.7,
@@ -72,20 +72,20 @@
         "deduction": 0.2,
         "deck_building": 0.0,
         "cooperation": 0.0,
-        "complexity": 0.6,
-        "duration_norm": 0.6,
-        "category": "Worker Placement"
+        "complexity": 0.47,
+        "duration_norm": 0.42,
+        "category": "Strategy"
     },
     "Pandemic": {
-        "strategy": 0.8,
+        "strategy": 0.6,
         "luck": 0.4,
         "negotiation": 0.5,
         "deduction": 0.5,
         "deck_building": 0.0,
         "cooperation": 1.0,
-        "complexity": 0.5,
-        "duration_norm": 0.4,
-        "category": "Cooperative"
+        "complexity": 0.36,
+        "duration_norm": 0.25,
+        "category": "Thematic"
     },
     "Mansions of Madness": {
         "strategy": 0.6,
@@ -94,31 +94,31 @@
         "deduction": 0.7,
         "deck_building": 0.0,
         "cooperation": 0.9,
-        "complexity": 0.7,
-        "duration_norm": 0.9,
-        "category": "Cooperative"
+        "complexity": 0.42,
+        "duration_norm": 0.83,
+        "category": "Thematic"
     },
-    "Avalon": {
+    "The Resistance: Avalon": {
         "strategy": 0.5,
         "luck": 0.0,
         "negotiation": 0.7,
         "deduction": 1.0,
         "deck_building": 0.0,
         "cooperation": 0.5,
-        "complexity": 0.3,
-        "duration_norm": 0.2,
-        "category": "Social Deduction"
+        "complexity": 0.2,
+        "duration_norm": 0.17,
+        "category": "Party"
     },
-    "Werewolf": {
+    "Ultimate Werewolf": {
         "strategy": 0.3,
         "luck": 0.2,
         "negotiation": 0.8,
         "deduction": 0.8,
         "deck_building": 0.0,
         "cooperation": 0.5,
-        "complexity": 0.2,
-        "duration_norm": 0.2,
-        "category": "Social Deduction"
+        "complexity": 0.12,
+        "duration_norm": 0.25,
+        "category": "Party"
     },
     "Dixit": {
         "strategy": 0.3,
@@ -127,8 +127,8 @@
         "deduction": 0.5,
         "deck_building": 0.0,
         "cooperation": 0.0,
-        "complexity": 0.1,
-        "duration_norm": 0.3,
+        "complexity": 0.05,
+        "duration_norm": 0.17,
         "category": "Party"
     },
     "Codenames": {
@@ -138,8 +138,8 @@
         "deduction": 0.8,
         "deck_building": 0.0,
         "cooperation": 0.5,
-        "complexity": 0.2,
-        "duration_norm": 0.2,
+        "complexity": 0.07,
+        "duration_norm": 0.08,
         "category": "Party"
     },
     "Betrayal at House on the Hill": {
@@ -149,8 +149,8 @@
         "deduction": 0.4,
         "deck_building": 0.0,
         "cooperation": 0.7,
-        "complexity": 0.5,
-        "duration_norm": 0.5,
+        "complexity": 0.34,
+        "duration_norm": 0.33,
         "category": "Thematic"
     },
     "Arkham Horror": {
@@ -160,8 +160,96 @@
         "deduction": 0.6,
         "deck_building": 0.2,
         "cooperation": 0.9,
-        "complexity": 0.9,
+        "complexity": 0.65,
         "duration_norm": 1.0,
         "category": "Thematic"
+    },
+    "Wingspan": {
+        "strategy": 0.5,
+        "luck": 0.3,
+        "negotiation": 0.1,
+        "deduction": 0.1,
+        "deck_building": 0.5,
+        "cooperation": 0.0,
+        "complexity": 0.36,
+        "duration_norm": 0.31,
+        "category": "Strategy"
+    },
+    "Pandemic Legacy: Season 1": {
+        "strategy": 0.7,
+        "luck": 0.3,
+        "negotiation": 0.6,
+        "deduction": 0.6,
+        "deck_building": 0.0,
+        "cooperation": 1.0,
+        "complexity": 0.46,
+        "duration_norm": 0.33,
+        "category": "Thematic"
+    },
+    "Twilight Imperium: Fourth Edition": {
+        "strategy": 0.9,
+        "luck": 0.4,
+        "negotiation": 0.9,
+        "deduction": 0.3,
+        "deck_building": 0.0,
+        "cooperation": 0.0,
+        "complexity": 0.82,
+        "duration_norm": 1.0,
+        "category": "Strategy"
+    },
+    "7 Wonders Duel": {
+        "strategy": 0.7,
+        "luck": 0.2,
+        "negotiation": 0.1,
+        "deduction": 0.3,
+        "deck_building": 0.5,
+        "cooperation": 0.0,
+        "complexity": 0.31,
+        "duration_norm": 0.17,
+        "category": "Strategy"
+    },
+    "Root": {
+        "strategy": 0.8,
+        "luck": 0.3,
+        "negotiation": 0.5,
+        "deduction": 0.2,
+        "deck_building": 0.2,
+        "cooperation": 0.0,
+        "complexity": 0.69,
+        "duration_norm": 0.5,
+        "category": "Strategy"
+    },
+    "Blood Rage": {
+        "strategy": 0.7,
+        "luck": 0.4,
+        "negotiation": 0.3,
+        "deduction": 0.2,
+        "deck_building": 0.5,
+        "cooperation": 0.0,
+        "complexity": 0.47,
+        "duration_norm": 0.42,
+        "category": "Strategy"
+    },
+    "Scythe": {
+        "strategy": 0.8,
+        "luck": 0.1,
+        "negotiation": 0.2,
+        "deduction": 0.2,
+        "deck_building": 0.0,
+        "cooperation": 0.0,
+        "complexity": 0.6,
+        "duration_norm": 0.64,
+        "category": "Strategy"
+    },
+    "Brass: Birmingham": {
+        "strategy": 0.9,
+        "luck": 0.1,
+        "negotiation": 0.2,
+        "deduction": 0.2,
+        "deck_building": 0.0,
+        "cooperation": 0.0,
+        "complexity": 0.72,
+        "duration_norm": 0.67,
+        "category": "Strategy"
     }
 }
