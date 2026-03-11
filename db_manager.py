@@ -98,10 +98,10 @@ def get_player_history(player_name=None):
         
     try:
         if player_name:
-            query = "SELECT history_id, player_name, game_name, score, is_winner FROM PlayHistory WHERE player_name = %s"
+            query = "SELECT history_id, player_name, game_name, score, is_winner, played_at FROM PlayHistory WHERE player_name = %s"
             params = (player_name,)
         else:
-            query = "SELECT history_id, player_name, game_name, score, is_winner FROM PlayHistory"
+            query = "SELECT history_id, player_name, game_name, score, is_winner, played_at FROM PlayHistory"
             params = None
             
         # pandas can read SQL directly using the connection object!
@@ -122,9 +122,9 @@ def get_player_history(player_name=None):
 def _fallback_local_history_df(player_name=None):
     """Fallback mock dataframe for development."""
     mock_history = [
-        {"history_id": 1, "player_name": "Alice", "game_name": "Catan", "score": 10, "is_winner": True},
-        {"history_id": 2, "player_name": "Alice", "game_name": "7 Wonders", "score": 50, "is_winner": False},
-        {"history_id": 3, "player_name": "Bob", "game_name": "Dixit", "score": 3, "is_winner": True},
+        {"history_id": 1, "player_name": "Alice", "game_name": "Catan", "score": 10, "is_winner": True, "played_at": "2025-03-01"},
+        {"history_id": 2, "player_name": "Alice", "game_name": "7 Wonders", "score": 50, "is_winner": False, "played_at": "2025-03-02"},
+        {"history_id": 3, "player_name": "Bob", "game_name": "Dixit", "score": 3, "is_winner": True, "played_at": "2025-03-03"},
     ]
     df = pd.DataFrame(mock_history)
     if player_name:
