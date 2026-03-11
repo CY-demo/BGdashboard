@@ -123,8 +123,8 @@ def _fallback_local_history_df(player_name=None):
     """Fallback mock dataframe for development."""
     mock_history = [
         {"history_id": 1, "player_name": "Alice", "game_name": "Catan", "score": 10, "is_winner": True},
-        {"history_id": 2, "player_name": "Alice", "game_name": "7 Wonders", "score": 50, "is_winner": False},
-        {"history_id": 3, "player_name": "Bob", "game_name": "Dixit", "score": 3, "is_winner": True},
+        {"history_id": 2, "player_name": "Alice", "game_name": "7 Wonders", "score": 50, "is_winner": True},
+        {"history_id": 3, "player_name": "Bob", "game_name": "Dixit", "score": 3, "is_winner": False},
     ]
     df = pd.DataFrame(mock_history)
     if player_name:
