@@ -137,7 +137,7 @@ class Recommender:
     def _player_performance(self, player_name: str, game_name: str) -> float:
         """
         Returns a normalised performance score in [0, 1].
-        Uses win rate if available, otherwise relative score vs. other players.
+        Blends win rate (70%) and relative score vs. other players (30%).
         """
         game_data = self.results_df[self.results_df["game_name"] == game_name]
         player_data = game_data[game_data["player_name"] == player_name]
@@ -145,25 +145,30 @@ class Recommender:
         if player_data.empty:
             return 0.0
 
-        # Prefer win rate
+        # Calculate Win Rate component (0.0 or 1.0)
+        win_rate = 0.0
         if "is_winner" in player_data.columns:
-            win_rate = player_data["is_winner"].mean()
-            return float(win_rate)
+            win_rate = float(player_data["is_winner"].mean())
 
-        # Fallback: relative score
-        if "score" in game_data.columns:
+        # Calculate Relative Score component (0.0 to 1.0)
+        rel_score_norm = 0.5
+        if "score" in game_data.columns and not game_data.empty:
             all_scores = game_data["score"]
             player_avg = player_data["score"].mean()
             overall_avg = all_scores.mean()
             overall_std = all_scores.std()
 
-            if overall_std == 0:
-                return 0.5
-            # Normalise with sigmoid-like clamp
-            relative = (player_avg - overall_avg) / (overall_std + 1e-9)
-            return float(np.clip((relative + 2) / 4, 0, 1))  # map [-2,2] → [0,1]
+            if overall_std > 0:
+                # Normalise with sigmoid-like clamp
+                relative = (player_avg - overall_avg) / (overall_std + 1e-9)
+                rel_score_norm = float(np.clip((relative + 2) / 4, 0, 1))
 
-        return 0.5  # neutral if no data
+        # Blend the two metrics
+        # If the player won, give them a strong baseline.
+        # If they lost, they can still earn up to 0.3 performance weight by playing well.
+        blended_score = (0.7 * win_rate) + (0.3 * rel_score_norm)
+
+        return float(np.clip(blended_score, 0, 1))
 
     def _build_game_matrix(self) -> pd.DataFrame:
         """Build a DataFrame of game feature vectors."""
