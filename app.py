@@ -32,7 +32,7 @@ with col_data:
     
     st.markdown("### Player Select")
     history_df = get_player_history()
-    existing_players = ["Alice", "Bob"]
+    existing_players = []
     if not history_df.empty:
         existing_players = history_df["player_name"].unique().tolist()
         
