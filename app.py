@@ -46,60 +46,68 @@ with col_data:
 
     # Show history
     st.markdown(f"### History for **{current_player}**")
+
     player_history_df = get_player_history(current_player)
     
     if player_history_df.empty:
         st.info("No play history found.")
     else:
-        st.dataframe(player_history_df[['game_name', 'score', 'is_winner']], use_container_width=True)
-        
-        # Edit/Delete
-        st.markdown("#### Edit or Delete a Record")
-        record_options = {
-            f"ID {row['history_id']}: {row['game_name']} (Current Score: {row['score']})": row 
-            for _, row in player_history_df.iterrows()
-        }
-        
-        record_to_modify = st.selectbox("Select record to modify:", list(record_options.keys()))
-        selected_row = record_options[record_to_modify]
-        
-        # UI for editing the score and win status
-        edit_score = st.number_input("Update Score", min_value=0, value=int(selected_row['score']), step=1, key="edit_score")
-        edit_is_winner = st.checkbox("Did you win? 👑", value=bool(selected_row['is_winner']), key="edit_winner")
-        
-        edit_col1, edit_col2 = st.columns(2)
-        with edit_col1:
-            if st.button("✏️ Save Changes", type="primary", use_container_width=True):
-                if update_match_result(selected_row['history_id'], edit_score, edit_is_winner):
-                    st.success("Record updated!")
-                    st.rerun() # Refresh the page to show updated table
-                else:
-                    st.error("Failed to update record.")
-                    
-        with edit_col2:
-            if st.button("🗑️ Delete", type="secondary", use_container_width=True):
-                if delete_match_result(selected_row['history_id']):
-                    st.success("Record deleted!")
-                    st.rerun() 
-                else:
-                    st.error("Failed to delete record.")
+        st.dataframe(player_history_df[['game_name', 'score', 'is_winner']], use_container_width=True, hide_index=True)
 
     st.divider()
 
     # Create new record
-    st.markdown("### Add New Match Result")
-    with st.form("add_match_form", clear_on_submit=True):
+st.markdown("### Add New Match Result")
+
+with st.form("add_match_form", clear_on_submit=True):
         new_game = st.selectbox("Select Board Game", available_games)
         new_score = st.number_input("Your Score", min_value=0, value=10, step=1)
         new_is_winner = st.checkbox("Did you win?")
-        
-        submitted = st.form_submit_button("Save Match Result")
+
+        submitted = st.form_submit_button("Save Match Result", type="primary")
         if submitted:
             if insert_match_result(current_player, new_game, new_score, new_is_winner):
                 st.success(f"Successfully added {new_game} to history!")
-                st.rerun() # Refresh the page to update the table immediately
+                st.rerun()  # refresh the page
             else:
-                st.error("Failed to save to database.")
+                st.error("Failed to save to database")
+
+st.divider()
+          
+     # Edit/Delete
+if not player_history_df.empty:
+    # Sort by played_at / session_date
+    player_history_df_sorted = player_history_df.sort_values("played_at", ascending=False)
+
+    # Build options for the selectbox
+    record_options = {
+        f"{row['game_name']} - {row['played_at']} (Score: {row['score']}) {'🏆' if row['is_winner'] else ''}": row
+        for _, row in player_history_df_sorted.iterrows()
+    }
+
+    record_to_modify = st.selectbox("Select record to modify:", list(record_options.keys()))
+    selected_row = record_options[record_to_modify]
+
+    # Inputs for editing
+    edit_score = st.number_input("Update Score", min_value=0, value=int(selected_row['score']), key=f"score_{selected_row['history_id']}")
+    edit_is_winner = st.checkbox("Did you win?", value=bool(selected_row['is_winner']), key=f"winner_{selected_row['history_id']}")
+
+    # Buttons for saving or deleting (outside form)
+    edit_col1, edit_col2 = st.columns(2)
+    with edit_col1:
+        if st.button("Save Changes", key=f"save_{selected_row['history_id']}"):
+            if update_match_result(selected_row['history_id'], edit_score, edit_is_winner):
+                st.success(f"Successfully updated {selected_row['game_name']} record!")
+                st.rerun()
+            else:
+                st.error("Failed to update record.")
+    with edit_col2:
+        if st.button("🗑 Delete Record", key=f"delete_{selected_row['history_id']}"):
+            if delete_match_result(selected_row['history_id']):
+                st.success(f"Successfully deleted {selected_row['game_name']} record!")
+                st.rerun()
+            else:
+                st.error("Failed to delete record.")
 
 # -----------------------------------------------------------------------------
 # Right Column: ML Engine
