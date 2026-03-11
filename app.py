@@ -9,7 +9,6 @@ Run with: streamlit run app.py
 """
 
 import streamlit as st
-import pandas as pd
 from db_manager import get_player_history, get_game_attributes, insert_match_result, delete_match_result, update_match_result
 from recommender import Recommender
 

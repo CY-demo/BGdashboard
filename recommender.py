@@ -4,7 +4,6 @@
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import NearestNeighbors
-from sklearn.preprocessing import MinMaxScaler
 
 FEATURE_KEYS = [
     "strategy",
