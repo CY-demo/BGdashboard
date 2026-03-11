@@ -7,6 +7,9 @@ from mysql.connector import Error
 from dotenv import load_dotenv
 import pandas as pd
 import json
+import streamlit as st
+import pandas as pd
+import json
 
 # Load environment variables from .env file
 load_dotenv()
@@ -33,6 +36,7 @@ def get_db_connection():
         print(f"Error while connecting to MySQL: {e}")
         return None
 
+@st.cache_data(ttl=3600)  # Cache the game attributes for 1 hour to prevent constant reloading
 def get_game_attributes():
     """
     Retrieves all games from the BoardGames table and formats them into

@@ -39,13 +39,9 @@ class Recommender:
 
     # Public API
 
-    def recommend(self, player_name: str, top_n: int = 3, method: str = "auto"):
+    def recommend(self, player_name: str, top_n: int = 3):
         """
-        Return top_n game recommendations for a player.
-
-        method : "ml" | "fallback" | "auto"
-            "auto" tries ML first; falls back to statistical if player has
-            played fewer than 2 games.
+        Return top_n game recommendations for a player using KNN.
         """
         played = self._games_played_by(player_name)
         unplayed = [g for g in self.game_attrs if g not in played]
@@ -53,59 +49,13 @@ class Recommender:
         if not unplayed:
             return []  # Player has played everything — nothing to recommend
 
-        use_ml = method == "ml" or (
-            method == "auto" and len(played) >= 2
-        )
-
-        if use_ml:
-            try:
-                return self._ml_recommend(player_name, unplayed, top_n)
-            except Exception as e:
-                print(f"[Recommender] ML failed ({e}), falling back to statistical.")
-
-        return self._statistical_recommend(player_name, unplayed, top_n)
-
-    def recommend_from_profile(self, profile: "np.ndarray", top_n: int = 3,
-                                played: list = None):
-        """
-        Recommend games directly from a pre-built profile vector.
-        Used for cold-start players who answered the questionnaire.
-
-        Parameters
-        ----------
-        profile : np.ndarray
-            Feature vector of length len(FEATURE_KEYS), e.g. from ColdStart.
-        top_n : int
-            Number of recommendations to return.
-        played : list, optional
-            Games to exclude (already played). Leave None to recommend from all.
-        """
-        exclude = set(played or [])
-        unplayed = [g for g in self.game_attrs if g not in exclude]
-
-        unplayed_df = self._game_df.loc[
-            self._game_df.index.isin(unplayed), FEATURE_KEYS
-        ]
-
-        if unplayed_df.empty:
+        try:
+            return self._ml_recommend(player_name, unplayed, top_n)
+        except Exception as e:
+            print(f"[Recommender] ML failed ({e})")
             return []
 
-        k = min(top_n, len(unplayed_df))
-        knn = NearestNeighbors(n_neighbors=k, metric="cosine")
-        knn.fit(unplayed_df.values)
 
-        distances, indices = knn.kneighbors([profile])
-        recommended_games = unplayed_df.iloc[indices[0]].index.tolist()
-        similarity_scores = 1 - distances[0]
-
-        return [
-            {
-                "game": game,
-                "score": round(float(sim), 3),
-                "method": "ML Cold-Start (Questionnaire)",
-            }
-            for game, sim in zip(recommended_games, similarity_scores)
-        ]
 
     # ML Recommendation
 
@@ -176,52 +126,7 @@ class Recommender:
         profile = np.average(np.array(vectors), axis=0, weights=weights)
         return profile
 
-    # Statistical Fallback
 
-    def _statistical_recommend(self, player_name: str, unplayed: list, top_n: int):
-        """
-        1. Find games where player's avg score > overall avg score → player is good.
-        2. Get categories of those games.
-        3. Recommend unplayed games in the same categories.
-        """
-        good_categories = self._categories_player_excels(player_name)
-
-        candidates = []
-        for game in unplayed:
-            cat = self.game_attrs.get(game, {}).get("category", "")
-            if cat in good_categories:
-                candidates.append({"game": game, "score": 1.0, "method": "Statistical Fallback"})
-
-        # If no category match, just return unplayed games sorted by complexity (easier first)
-        if not candidates:
-            candidates = [
-                {
-                    "game": g,
-                    "score": 1 - self.game_attrs[g].get("complexity", 0.5),
-                    "method": "Statistical Fallback (no category match)",
-                }
-                for g in unplayed
-                if g in self.game_attrs
-            ]
-
-        candidates.sort(key=lambda x: x["score"], reverse=True)
-        return candidates[:top_n]
-
-    def _categories_player_excels(self, player_name: str) -> set:
-        """
-        Returns a set of game categories where the player performs above average.
-        """
-        played = self._games_played_by(player_name)
-        good_categories = set()
-
-        for game in played:
-            perf = self._player_performance(player_name, game)
-            if perf > 0.5:  # above average
-                cat = self.game_attrs.get(game, {}).get("category")
-                if cat:
-                    good_categories.add(cat)
-
-        return good_categories
 
     # Utilities
 
