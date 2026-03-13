@@ -52,7 +52,10 @@ with col_data:
     if player_history_df.empty:
         st.info("No play history found.")
     else:
-        st.dataframe(player_history_df[['game_name', 'score', 'is_winner']], use_container_width=True, hide_index=True)
+        # Display score as '-' if it is None
+        display_df = player_history_df[['game_name', 'score', 'is_winner']].copy()
+        display_df['score'] = display_df['score'].fillna("-")
+        st.dataframe(display_df, use_container_width=True, hide_index=True)
 
     st.divider()
 
@@ -61,12 +64,23 @@ st.markdown("### Add New Match Result")
 
 with st.form("add_match_form", clear_on_submit=True):
         new_game = st.selectbox("Select Board Game", available_games)
-        new_score = st.number_input("Your Score", min_value=0, value=10, step=1)
+        
+        # Use text_input instead of number_input to allow empty values
+        new_score_raw = st.text_input("Your Score (Leave empty for win/loss only games)", value="")
         new_is_winner = st.checkbox("Did you win?")
 
         submitted = st.form_submit_button("Save Match Result", type="primary")
         if submitted:
-            if insert_match_result(current_player, new_game, new_score, new_is_winner):
+            # Parse score: None if empty, integer if valid number
+            parsed_score = None
+            if new_score_raw.strip():
+                try:
+                    parsed_score = int(new_score_raw)
+                except ValueError:
+                    st.error("Score must be a number or left empty.")
+                    st.stop()
+                    
+            if insert_match_result(current_player, new_game, parsed_score, new_is_winner):
                 st.success(f"Successfully added {new_game} to history!")
                 st.rerun()  # refresh the page
             else:
@@ -81,7 +95,7 @@ if not player_history_df.empty:
 
     # Build options for the selectbox
     record_options = {
-        f"{row['game_name']} - {row['played_at']} (Score: {row['score']}) {'🏆' if row['is_winner'] else ''}": row
+        f"{row['game_name']} - {row['played_at']} (Score: {row['score'] if row['score'] is not None else '-'}) {'🏆' if row['is_winner'] else ''}": row
         for _, row in player_history_df_sorted.iterrows()
     }
 
@@ -89,14 +103,23 @@ if not player_history_df.empty:
     selected_row = record_options[record_to_modify]
 
     # Inputs for editing
-    edit_score = st.number_input("Update Score", min_value=0, value=int(selected_row['score']), key=f"score_{selected_row['history_id']}")
+    current_score_str = str(int(selected_row['score'])) if selected_row['score'] is not None else ""
+    edit_score_raw = st.text_input("Update Score (Leave empty for win/loss only games)", value=current_score_str, key=f"score_{selected_row['history_id']}")
     edit_is_winner = st.checkbox("Did you win?", value=bool(selected_row['is_winner']), key=f"winner_{selected_row['history_id']}")
 
     # Buttons for saving or deleting (outside form)
     edit_col1, edit_col2 = st.columns(2)
     with edit_col1:
         if st.button("Save Changes", key=f"save_{selected_row['history_id']}"):
-            if update_match_result(selected_row['history_id'], edit_score, edit_is_winner):
+            parsed_edit_score = None
+            if edit_score_raw.strip():
+                try:
+                    parsed_edit_score = int(edit_score_raw)
+                except ValueError:
+                    st.error("Score must be a number or left empty.")
+                    st.stop()
+                    
+            if update_match_result(selected_row['history_id'], parsed_edit_score, edit_is_winner):
                 st.success(f"Successfully updated {selected_row['game_name']} record!")
                 st.rerun()
             else:

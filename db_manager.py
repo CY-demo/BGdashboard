@@ -113,6 +113,10 @@ def get_player_history(player_name=None):
         if df.empty:
             return _fallback_local_history_df(player_name)
 
+        # Ensure empty scores (NULL in DB) are treated properly, not as NaN floats
+        df['score'] = df['score'].astype(object)
+        df['score'] = df['score'].where(pd.notnull(df['score']), None)
+
         return df
 
     except Error as e:
@@ -164,9 +168,12 @@ def insert_match_result(player_name, game_name, score, is_winner):
         game_id = row[0]
 
         # 3. Insert record
+        # Use None for SQL NULL if the score wasn't provided (for win/loss only games)
+        sql_score = score if score is not None and str(score).strip() != "" else None
+        
         cursor.execute(
             "INSERT INTO player_history (player_id, game_id, score, is_winner) VALUES (%s, %s, %s, %s)",
-            (player_id, game_id, score, 1 if is_winner else 0)
+            (player_id, game_id, sql_score, 1 if is_winner else 0)
         )
         connection.commit()
         return True
@@ -188,9 +195,12 @@ def update_match_result(history_id, new_score, new_is_winner):
 
     try:
         cursor = connection.cursor()
+        
+        sql_score = new_score if new_score is not None and str(new_score).strip() != "" else None
+        
         cursor.execute(
             "UPDATE player_history SET score = %s, is_winner = %s WHERE history_id = %s",
-            (new_score, 1 if new_is_winner else 0, history_id)
+            (sql_score, 1 if new_is_winner else 0, history_id)
         )
         connection.commit()
         return True
