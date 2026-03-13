@@ -1,5 +1,5 @@
 # db_manager.py
-# Handles MySQL connections and CRUD operations.
+# Handles MySQL connections (via automatic SSH tunnel) and CRUD operations.
 
 import os
 import mysql.connector
@@ -8,24 +8,67 @@ from dotenv import load_dotenv
 import pandas as pd
 import json
 import streamlit as st
-import pandas as pd
-import json
+
+try:
+    from sshtunnel import SSHTunnelForwarder
+    SSHTUNNEL_AVAILABLE = True
+except ImportError:
+    SSHTUNNEL_AVAILABLE = False
 
 # Load environment variables from .env file
 load_dotenv()
 
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "3306")
-DB_NAME = os.getenv("DB_NAME", "boardgame_tracker")
-DB_USER = os.getenv("DB_USER", "root")
+# SSH Tunnel settings
+SSH_HOST     = os.getenv("SSH_HOST", "")
+SSH_PORT     = int(os.getenv("SSH_PORT", "22"))
+SSH_USER     = os.getenv("SSH_USER", "")
+SSH_PASSWORD = os.getenv("SSH_PASSWORD", "")
+
+# MySQL settings
+DB_HOST     = os.getenv("DB_HOST", "127.0.0.1")
+DB_PORT     = int(os.getenv("DB_PORT", "3306"))
+DB_NAME     = os.getenv("DB_NAME", "boardgame_tracker")
+DB_USER     = os.getenv("DB_USER", "root")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 
+# ── Tunnel management ──────────────────────────────────────────────────────────
+_tunnel = None
+
+def _start_tunnel():
+    """Start SSH tunnel if credentials are provided and sshtunnel is installed."""
+    global _tunnel
+    if not SSHTUNNEL_AVAILABLE or not SSH_HOST or not SSH_USER:
+        return None   # No tunnel — assume direct connection or PuTTY tunnel already open
+
+    if _tunnel and _tunnel.is_active:
+        return _tunnel  # Reuse existing tunnel
+
+    try:
+        _tunnel = SSHTunnelForwarder(
+            (SSH_HOST, SSH_PORT),
+            ssh_username=SSH_USER,
+            ssh_password=SSH_PASSWORD,
+            remote_bind_address=(DB_HOST, DB_PORT),
+        )
+        _tunnel.start()
+        print(f"✅ SSH Tunnel established: {SSH_HOST} → {DB_HOST}:{DB_PORT}")
+        return _tunnel
+    except Exception as e:
+        print(f"⚠️ SSH Tunnel failed ({e}). Trying direct connection...")
+        return None
+
+
 def get_db_connection():
-    """Establishes and returns a connection to the MySQL database."""
+    """Establishes and returns a connection to the MySQL database (via SSH tunnel if configured)."""
+    tunnel = _start_tunnel()
+
+    # If tunnel is active, connect through it; otherwise connect directly
+    local_port = tunnel.local_bind_port if tunnel else DB_PORT
+
     try:
         connection = mysql.connector.connect(
-            host=DB_HOST,
-            port=DB_PORT,
+            host="127.0.0.1",
+            port=local_port,
             database=DB_NAME,
             user=DB_USER,
             password=DB_PASSWORD
@@ -36,44 +79,35 @@ def get_db_connection():
         print(f"Error while connecting to MySQL: {e}")
         return None
 
-@st.cache_data(ttl=3600)  # Cache the game attributes for 1 hour to prevent constant reloading
+# ── Game Attributes ────────────────────────────────────────────────────────────
+
+@st.cache_data(ttl=3600)
 def get_game_attributes():
     """
-    Retrieves all games from the BoardGames table and formats them into
-    the exact nested dictionary expected by the recommender system.
-        
-    If the database is empty or fails, it falls back to the local games.json
+    Retrieves all games from the `games` table and formats them into
+    the nested dictionary expected by the recommender system.
+    Falls back to local games.json if the DB is unreachable.
     """
     connection = get_db_connection()
     if not connection:
         return _fallback_local_games_json()
-        
+
     try:
-        query = "SELECT * FROM games"
-        
-        # We use dictionary cursor so rows come back as dicts
         cursor = connection.cursor(dictionary=True)
-        cursor.execute(query)
+        cursor.execute("SELECT * FROM games")
         records = cursor.fetchall()
-        
+
         if not records:
             return _fallback_local_games_json()
-            
-        # Reconstruct into the {"Game Name": {"strategy": 0.8, ...}} nested format
+
         game_dict = {}
         for row in records:
-            # DB team mentioned column is "name" now instead of "game_name"
-            name = row.pop("name", None)
-            if not name:
-                name = row.pop("game_name") # fallback if they didn't rename it
-            
-            # Remove PK from dictionary values
+            name = row.pop("name", None) or row.pop("game_name", None)
             row.pop("game_id", None)
-            
             game_dict[name] = row
-            
+
         return game_dict
-        
+
     except Error as e:
         print(f"Error fetching game attributes: {e}")
         return _fallback_local_games_json()
@@ -82,50 +116,50 @@ def get_game_attributes():
             cursor.close()
             connection.close()
 
+
 def _fallback_local_games_json():
-    """Fallback method to load local JSON if DB fails/is empty during development."""
-    print("⚠️ [DB Warning] Connecting failed or table empty. Falling back to local games.json")
+    """Fallback to local JSON if DB fails / is empty during development."""
+    print("⚠️ [DB Warning] Falling back to local games.json")
     try:
         with open('data/games.json', 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception:
         return {}
 
+# ── Player History ─────────────────────────────────────────────────────────────
+
 def get_player_history(player_name=None):
     """
-    Retrieves match history from PlayHistory table.
-    If player_name is provided, filters for that specific player.
+    Retrieves match history from player_history table via JOIN.
     Returns a pandas DataFrame.
     """
     connection = get_db_connection()
-    # Dummy fallback during early development before DB is populated
     if not connection:
         return _fallback_local_history_df(player_name)
-        
+
     try:
-        # DB Team schema uses JOINs now
         base_query = """
-            SELECT ph.history_id, p.player_name, g.name as game_name, ph.score, ph.is_winner, ph.created_at as played_at
+            SELECT ph.history_id, p.player_name, g.name as game_name,
+                   ph.score, ph.is_winner, ph.created_at as played_at
             FROM player_history ph
             JOIN players p ON ph.player_id = p.player_id
-            JOIN games g ON ph.game_id = g.game_id
+            JOIN games g   ON ph.game_id   = g.game_id
         """
-        
+
         if player_name:
-            query = base_query + " WHERE p.player_name = %s"
+            query  = base_query + " WHERE p.player_name = %s"
             params = (player_name,)
         else:
-            query = base_query
+            query  = base_query
             params = None
-            
-        # pandas can read SQL directly using the connection object!
+
         df = pd.read_sql(query, connection, params=params)
-        
+
         if df.empty:
             return _fallback_local_history_df(player_name)
-            
+
         return df
-        
+
     except Error as e:
         print(f"Error fetching history: {e}")
         return _fallback_local_history_df(player_name)
@@ -133,17 +167,20 @@ def get_player_history(player_name=None):
         if connection and connection.is_connected():
             connection.close()
 
+
 def _fallback_local_history_df(player_name=None):
-    """Fallback mock dataframe for development."""
+    """Fallback mock dataframe for development / offline mode."""
     mock_history = [
-        {"history_id": 1, "player_name": "Alice", "game_name": "Catan", "score": 10, "is_winner": True, "played_at": "2025-03-01"},
+        {"history_id": 1, "player_name": "Alice", "game_name": "Catan",     "score": 10, "is_winner": True,  "played_at": "2025-03-01"},
         {"history_id": 2, "player_name": "Alice", "game_name": "7 Wonders", "score": 50, "is_winner": False, "played_at": "2025-03-02"},
-        {"history_id": 3, "player_name": "Bob", "game_name": "Dixit", "score": 3, "is_winner": True, "played_at": "2025-03-03"},
+        {"history_id": 3, "player_name": "Bob",   "game_name": "Dixit",     "score": 3,  "is_winner": True,  "played_at": "2025-03-03"},
     ]
     df = pd.DataFrame(mock_history)
     if player_name:
         df = df[df["player_name"] == player_name]
     return df
+
+# ── CRUD Operations ────────────────────────────────────────────────────────────
 
 def insert_match_result(player_name, game_name, score, is_winner):
     """Inserts a new match record into the database."""
@@ -151,37 +188,34 @@ def insert_match_result(player_name, game_name, score, is_winner):
     if not connection:
         print("⚠️ [DB Warning] Cannot insert match result: Database offline.")
         return False
-        
+
     try:
         cursor = connection.cursor()
-        
-        # 1. Get or Create player_id
+
+        # 1. Get or create player_id
         cursor.execute("SELECT player_id FROM players WHERE player_name = %s", (player_name,))
-        player_row = cursor.fetchone()
-        if not player_row:
+        row = cursor.fetchone()
+        player_id = row[0] if row else None
+        if not player_id:
             cursor.execute("INSERT INTO players (player_name) VALUES (%s)", (player_name,))
             player_id = cursor.lastrowid
-        else:
-            player_id = player_row[0]
-            
-        # 2. Get game_id
-        cursor.execute("SELECT game_id FROM games WHERE name = %s", (game_name,))
-        game_row = cursor.fetchone()
-        if not game_row:
-            print(f"⚠️ Error: Game '{game_name}' not found in DB.")
-            return False
-        game_id = game_row[0]
 
-        # 3. Insert into player_history
-        query = """
-            INSERT INTO player_history (player_id, game_id, score, is_winner) 
-            VALUES (%s, %s, %s, %s)
-        """
-        # Convert boolean to 1/0 for safe MySQL storage
-        winner_bit = 1 if is_winner else 0
-        cursor.execute(query, (player_id, game_id, score, winner_bit))
+        # 2. Look up game_id
+        cursor.execute("SELECT game_id FROM games WHERE name = %s", (game_name,))
+        row = cursor.fetchone()
+        if not row:
+            print(f"⚠️ Game '{game_name}' not found in DB.")
+            return False
+        game_id = row[0]
+
+        # 3. Insert record
+        cursor.execute(
+            "INSERT INTO player_history (player_id, game_id, score, is_winner) VALUES (%s, %s, %s, %s)",
+            (player_id, game_id, score, 1 if is_winner else 0)
+        )
         connection.commit()
         return True
+
     except Error as e:
         print(f"Error inserting match result: {e}")
         return False
@@ -190,18 +224,19 @@ def insert_match_result(player_name, game_name, score, is_winner):
             cursor.close()
             connection.close()
 
+
 def update_match_result(history_id, new_score, new_is_winner):
-    """Updates an existing match record (e.g. fixing a typo)."""
+    """Updates an existing match record."""
     connection = get_db_connection()
     if not connection:
-        print("⚠️ [DB Warning] Cannot update match: Database offline.")
         return False
-        
+
     try:
         cursor = connection.cursor()
-        query = "UPDATE player_history SET score = %s, is_winner = %s WHERE history_id = %s"
-        winner_bit = 1 if new_is_winner else 0
-        cursor.execute(query, (new_score, winner_bit, history_id))
+        cursor.execute(
+            "UPDATE player_history SET score = %s, is_winner = %s WHERE history_id = %s",
+            (new_score, 1 if new_is_winner else 0, history_id)
+        )
         connection.commit()
         return True
     except Error as e:
@@ -212,17 +247,16 @@ def update_match_result(history_id, new_score, new_is_winner):
             cursor.close()
             connection.close()
 
+
 def delete_match_result(history_id):
     """Deletes a match record from the database."""
     connection = get_db_connection()
     if not connection:
-        print("⚠️ [DB Warning] Cannot delete match: Database offline.")
         return False
-        
+
     try:
         cursor = connection.cursor()
-        query = "DELETE FROM player_history WHERE history_id = %s"
-        cursor.execute(query, (history_id,))
+        cursor.execute("DELETE FROM player_history WHERE history_id = %s", (history_id,))
         connection.commit()
         return True
     except Error as e:
@@ -233,12 +267,13 @@ def delete_match_result(history_id):
             cursor.close()
             connection.close()
 
-# Quick test if run directly
+
+# ── Quick connection test ──────────────────────────────────────────────────────
 if __name__ == "__main__":
-    print("Testing DB Manager...")
-    test_conn = get_db_connection()
-    if test_conn:
-        print("✅ Successfully connected to MySQL database!")
-        test_conn.close()
+    print("Testing DB connection (with auto SSH tunnel if configured)...")
+    conn = get_db_connection()
+    if conn:
+        print("✅ Successfully connected to MySQL!")
+        conn.close()
     else:
-        print("❌ Could not connect to MySQL database. Please check XAMPP/MySQL service and .env file.")
+        print("❌ Could not connect. Check your .env SSH and DB credentials.")
