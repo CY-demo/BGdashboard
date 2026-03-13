@@ -1,5 +1,6 @@
 # db_manager.py
-# Handles MySQL connections (via automatic SSH tunnel) and CRUD operations.
+# Handles MySQL connections and CRUD operations.
+# Uses direct MySQL connection — no SSH tunnel needed with cloud databases like Railway.
 
 import os
 import mysql.connector
@@ -9,66 +10,21 @@ import pandas as pd
 import json
 import streamlit as st
 
-try:
-    from sshtunnel import SSHTunnelForwarder
-    SSHTUNNEL_AVAILABLE = True
-except ImportError:
-    SSHTUNNEL_AVAILABLE = False
-
 # Load environment variables from .env file
 load_dotenv()
 
-# SSH Tunnel settings
-SSH_HOST     = os.getenv("SSH_HOST", "")
-SSH_PORT     = int(os.getenv("SSH_PORT", "22"))
-SSH_USER     = os.getenv("SSH_USER", "")
-SSH_PASSWORD = os.getenv("SSH_PASSWORD", "")
-
-# MySQL settings
-DB_HOST     = os.getenv("DB_HOST", "127.0.0.1")
+DB_HOST     = os.getenv("DB_HOST", "localhost")
 DB_PORT     = int(os.getenv("DB_PORT", "3306"))
-DB_NAME     = os.getenv("DB_NAME", "boardgame_tracker")
-DB_USER     = os.getenv("DB_USER", "root")
+DB_NAME     = os.getenv("DB_NAME", "")
+DB_USER     = os.getenv("DB_USER", "")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 
-# ── Tunnel management ──────────────────────────────────────────────────────────
-_tunnel = None
-
-def _start_tunnel():
-    """Start SSH tunnel if credentials are provided and sshtunnel is installed."""
-    global _tunnel
-    if not SSHTUNNEL_AVAILABLE or not SSH_HOST or not SSH_USER:
-        return None   # No tunnel — assume direct connection or PuTTY tunnel already open
-
-    if _tunnel and _tunnel.is_active:
-        return _tunnel  # Reuse existing tunnel
-
-    try:
-        _tunnel = SSHTunnelForwarder(
-            (SSH_HOST, SSH_PORT),
-            ssh_username=SSH_USER,
-            ssh_password=SSH_PASSWORD,
-            remote_bind_address=(DB_HOST, DB_PORT),
-        )
-        _tunnel.start()
-        print(f"✅ SSH Tunnel established: {SSH_HOST} → {DB_HOST}:{DB_PORT}")
-        return _tunnel
-    except Exception as e:
-        print(f"⚠️ SSH Tunnel failed ({e}). Trying direct connection...")
-        return None
-
-
 def get_db_connection():
-    """Establishes and returns a connection to the MySQL database (via SSH tunnel if configured)."""
-    tunnel = _start_tunnel()
-
-    # If tunnel is active, connect through it; otherwise connect directly
-    local_port = tunnel.local_bind_port if tunnel else DB_PORT
-
+    """Establishes and returns a direct connection to the MySQL database."""
     try:
         connection = mysql.connector.connect(
-            host="127.0.0.1",
-            port=local_port,
+            host=DB_HOST,
+            port=DB_PORT,
             database=DB_NAME,
             user=DB_USER,
             password=DB_PASSWORD
@@ -130,7 +86,7 @@ def _fallback_local_games_json():
 
 def get_player_history(player_name=None):
     """
-    Retrieves match history from player_history table via JOIN.
+    Retrieves match history via JOIN across players, games, player_history.
     Returns a pandas DataFrame.
     """
     connection = get_db_connection()
@@ -145,7 +101,6 @@ def get_player_history(player_name=None):
             JOIN players p ON ph.player_id = p.player_id
             JOIN games g   ON ph.game_id   = g.game_id
         """
-
         if player_name:
             query  = base_query + " WHERE p.player_name = %s"
             params = (player_name,)
@@ -186,7 +141,7 @@ def insert_match_result(player_name, game_name, score, is_winner):
     """Inserts a new match record into the database."""
     connection = get_db_connection()
     if not connection:
-        print("⚠️ [DB Warning] Cannot insert match result: Database offline.")
+        print("⚠️ [DB Warning] Cannot insert: Database offline.")
         return False
 
     try:
@@ -270,10 +225,10 @@ def delete_match_result(history_id):
 
 # ── Quick connection test ──────────────────────────────────────────────────────
 if __name__ == "__main__":
-    print("Testing DB connection (with auto SSH tunnel if configured)...")
+    print("Testing DB connection...")
     conn = get_db_connection()
     if conn:
         print("✅ Successfully connected to MySQL!")
         conn.close()
     else:
-        print("❌ Could not connect. Check your .env SSH and DB credentials.")
+        print("❌ Could not connect. Check your .env DB credentials.")
