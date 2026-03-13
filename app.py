@@ -63,7 +63,9 @@ with col_data:
 st.markdown("### Add New Match Result")
 
 with st.form("add_match_form", clear_on_submit=True):
-        new_game = st.selectbox("Select Board Game", available_games)
+        # Add a placeholder option at the top so it doesn't default to the first game
+        game_options = ["-- Select a Game --"] + available_games
+        new_game = st.selectbox("Select Board Game", game_options)
         
         # Use text_input instead of number_input to allow empty values
         new_score_raw = st.text_input("Your Score (Leave empty for win/loss only games)", value="")
@@ -71,6 +73,10 @@ with st.form("add_match_form", clear_on_submit=True):
 
         submitted = st.form_submit_button("Save Match Result", type="primary")
         if submitted:
+            if new_game == "-- Select a Game --":
+                st.warning("Please select a game first.")
+                st.stop()
+                
             # Parse score: None if empty, integer if valid number
             parsed_score = None
             if new_score_raw.strip():
