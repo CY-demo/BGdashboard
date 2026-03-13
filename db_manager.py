@@ -49,7 +49,7 @@ def get_game_attributes():
         return _fallback_local_games_json()
         
     try:
-        query = "SELECT * FROM BoardGames"
+        query = "SELECT * FROM games"
         
         # We use dictionary cursor so rows come back as dicts
         cursor = connection.cursor(dictionary=True)
@@ -62,8 +62,14 @@ def get_game_attributes():
         # Reconstruct into the {"Game Name": {"strategy": 0.8, ...}} nested format
         game_dict = {}
         for row in records:
-            name = row.pop("game_name")
-            # The remaining columns (strategy, luck, category) become the inner dict
+            # DB team mentioned column is "name" now instead of "game_name"
+            name = row.pop("name", None)
+            if not name:
+                name = row.pop("game_name") # fallback if they didn't rename it
+            
+            # Remove PK from dictionary values
+            row.pop("game_id", None)
+            
             game_dict[name] = row
             
         return game_dict
@@ -97,11 +103,19 @@ def get_player_history(player_name=None):
         return _fallback_local_history_df(player_name)
         
     try:
+        # DB Team schema uses JOINs now
+        base_query = """
+            SELECT ph.history_id, p.player_name, g.name as game_name, ph.score, ph.is_winner, ph.created_at as played_at
+            FROM player_history ph
+            JOIN players p ON ph.player_id = p.player_id
+            JOIN games g ON ph.game_id = g.game_id
+        """
+        
         if player_name:
-            query = "SELECT history_id, player_name, game_name, score, is_winner, played_at FROM PlayHistory WHERE player_name = %s"
+            query = base_query + " WHERE p.player_name = %s"
             params = (player_name,)
         else:
-            query = "SELECT history_id, player_name, game_name, score, is_winner, played_at FROM PlayHistory"
+            query = base_query
             params = None
             
         # pandas can read SQL directly using the connection object!
@@ -140,13 +154,32 @@ def insert_match_result(player_name, game_name, score, is_winner):
         
     try:
         cursor = connection.cursor()
+        
+        # 1. Get or Create player_id
+        cursor.execute("SELECT player_id FROM players WHERE player_name = %s", (player_name,))
+        player_row = cursor.fetchone()
+        if not player_row:
+            cursor.execute("INSERT INTO players (player_name) VALUES (%s)", (player_name,))
+            player_id = cursor.lastrowid
+        else:
+            player_id = player_row[0]
+            
+        # 2. Get game_id
+        cursor.execute("SELECT game_id FROM games WHERE name = %s", (game_name,))
+        game_row = cursor.fetchone()
+        if not game_row:
+            print(f"⚠️ Error: Game '{game_name}' not found in DB.")
+            return False
+        game_id = game_row[0]
+
+        # 3. Insert into player_history
         query = """
-            INSERT INTO PlayHistory (player_name, game_name, score, is_winner) 
+            INSERT INTO player_history (player_id, game_id, score, is_winner) 
             VALUES (%s, %s, %s, %s)
         """
         # Convert boolean to 1/0 for safe MySQL storage
         winner_bit = 1 if is_winner else 0
-        cursor.execute(query, (player_name, game_name, score, winner_bit))
+        cursor.execute(query, (player_id, game_id, score, winner_bit))
         connection.commit()
         return True
     except Error as e:
@@ -166,7 +199,7 @@ def update_match_result(history_id, new_score, new_is_winner):
         
     try:
         cursor = connection.cursor()
-        query = "UPDATE PlayHistory SET score = %s, is_winner = %s WHERE history_id = %s"
+        query = "UPDATE player_history SET score = %s, is_winner = %s WHERE history_id = %s"
         winner_bit = 1 if new_is_winner else 0
         cursor.execute(query, (new_score, winner_bit, history_id))
         connection.commit()
@@ -188,7 +221,7 @@ def delete_match_result(history_id):
         
     try:
         cursor = connection.cursor()
-        query = "DELETE FROM PlayHistory WHERE history_id = %s"
+        query = "DELETE FROM player_history WHERE history_id = %s"
         cursor.execute(query, (history_id,))
         connection.commit()
         return True
