@@ -145,10 +145,10 @@ def get_top_games(limit=3):
 
     try:
         query = """
-            SELECT g.name as game_name, COUNT(ph.history_id) as play_count
+            SELECT g.game_id, g.name as game_name, COUNT(ph.history_id) as play_count
             FROM player_history ph
             JOIN games g ON ph.game_id = g.game_id
-            GROUP BY g.game_id
+            GROUP BY g.game_id, g.name
             ORDER BY play_count DESC
             LIMIT %s
         """
