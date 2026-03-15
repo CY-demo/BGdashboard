@@ -42,9 +42,38 @@ with dash_col1:
         if not top_players:
             st.write("  No winners recorded yet.")
         else:
-            for i, p in enumerate(top_players):
-                score_text = f" (Highest Score: {p['highest_score']})" if p['highest_score'] is not None else ""
-                st.markdown(f"**#{i+1}** {p['player_name']} — *{p['wins']} Wins*{score_text}")
+            # Pad the list to 3 for the podium
+            while len(top_players) < 3:
+                top_players.append({"player_name": "-", "wins": 0, "highest_score": None})
+            
+            p1 = top_players[0]
+            p2 = top_players[1]
+            p3 = top_players[2]
+            
+            s1 = f"<br>{p1['highest_score']} pts" if p1['highest_score'] is not None else ""
+            s2 = f"<br>{p2['highest_score']} pts" if p2['highest_score'] is not None else ""
+            s3 = f"<br>{p3['highest_score']} pts" if p3['highest_score'] is not None else ""
+            
+            podium_html = f"""
+            <div class="podium-container">
+                <div class="podium-box podium-2">
+                    <div class="podium-rank">🥈</div>
+                    <div class="podium-name">{p2['player_name']}</div>
+                    <div class="podium-score">{p2['wins']}W{s2}</div>
+                </div>
+                <div class="podium-box podium-1">
+                    <div class="podium-rank">🥇</div>
+                    <div class="podium-name">{p1['player_name']}</div>
+                    <div class="podium-score">{p1['wins']}W{s1}</div>
+                </div>
+                <div class="podium-box podium-3">
+                    <div class="podium-rank">🥉</div>
+                    <div class="podium-name">{p3['player_name']}</div>
+                    <div class="podium-score">{p3['wins']}W{s3}</div>
+                </div>
+            </div>
+            """
+            st.markdown(podium_html, unsafe_allow_html=True)
 
 with dash_col2:
     st.markdown("### 📡 Recent Activity Feed")
@@ -299,6 +328,66 @@ st.markdown("""
         font-family: 'Space Grotesk', sans-serif !important;
     }
     
+    /* Podium Styles */
+    .podium-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 15px;
+        margin-top: 20px;
+        height: 180px;
+    }
+    
+    .podium-box {
+        text-align: center;
+        border-radius: 12px 12px 0 0;
+        padding: 10px;
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        position: relative;
+    }
+    
+    .podium-1 {
+        height: 140px;
+        width: 110px;
+        background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+        z-index: 3;
+    }
+    
+    .podium-2 {
+        height: 110px;
+        width: 100px;
+        background: linear-gradient(135deg, #E0E0E0 0%, #BDBDBD 100%);
+        z-index: 2;
+    }
+    
+    .podium-3 {
+        height: 90px;
+        width: 100px;
+        background: linear-gradient(135deg, #CD7F32 0%, #A0522D 100%);
+        z-index: 1;
+    }
+    
+    .podium-rank {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+    }
+    
+    .podium-name {
+        font-size: 1.1rem;
+        word-wrap: break-word;
+    }
+    
+    .podium-score {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-top: auto;
+    }
+    
     /*dropdown box */
     .stSelectbox [data-baseweb="select"] {
         background-color: #FFFFFF !important;
@@ -341,26 +430,32 @@ with col_data:
         st.warning("Please select or enter a player name to continue.")
         st.stop()
 
-    # Show history header
-    st.markdown(f"### History for **{current_player}**")
+    # Display the user's top 3 best games (highest win count, or best score)
+    st.markdown(f"### Profile for **{current_player}**")
 
     player_history_df = get_player_history(current_player)
     
     if player_history_df.empty:
         st.info("No play history found.")
     else:
-        # Display score as '-' if it is None, and map winner to emoji
-        display_df = player_history_df[['game_name', 'score', 'is_winner']].copy()
-        display_df['score'] = display_df['score'].fillna("-")
-        display_df['is_winner'] = display_df['is_winner'].map({1: "👑", 0: "", True: "👑", False: ""})
+        # Calculate their top 3 games
+        wins_df = player_history_df[player_history_df['is_winner'] == 1]
         
-        # Rename columns for better presentation
-        display_df = display_df.rename(columns={
-            "game_name": "Game",
-            "score": "Score",
-            "is_winner": "Winner"
-        })
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        st.markdown("🏅 **Personal Best Games**")
+        if wins_df.empty:
+            # No wins, just show highest scores
+            best_scores = player_history_df.dropna(subset=['score']).sort_values('score', ascending=False)
+            if best_scores.empty:
+                st.write("Keep playing to earn your first win!")
+            else:
+                top_3 = best_scores.head(3)
+                for _, row in top_3.iterrows():
+                    st.markdown(f"- **{row['game_name']}** (Score: *{row['score']}*)")
+        else:
+            # Show top 3 by win count
+            win_counts = wins_df.groupby('game_name').size().reset_index(name='wins').sort_values('wins', ascending=False).head(3)
+            for _, row in win_counts.iterrows():
+                st.markdown(f"- **{row['game_name']}** — *{row['wins']} Wins* 👑")
 
     st.divider()
 
@@ -401,6 +496,15 @@ st.divider()
           
      # Edit/Delete
 if not player_history_df.empty:
+    st.markdown("### Manage History")
+    
+    # Render the full dataframe table for editing
+    display_df = player_history_df[['game_name', 'score', 'is_winner', 'played_at']].copy()
+    display_df['score'] = display_df['score'].fillna("-")
+    display_df['is_winner'] = display_df['is_winner'].map({1: "👑", 0: "", True: "👑", False: ""})
+    display_df = display_df.rename(columns={"game_name": "Game", "score": "Score", "is_winner": "Winner", "played_at": "Date"})
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
+    
     # Sort by played_at / session_date
     player_history_df_sorted = player_history_df.sort_values("played_at", ascending=False)
 
@@ -410,7 +514,7 @@ if not player_history_df.empty:
         for _, row in player_history_df_sorted.iterrows()
     }
 
-    record_to_modify = st.selectbox("Select record to modify:", list(record_options.keys()))
+    record_to_modify = st.selectbox("Select record to modify or delete:", list(record_options.keys()))
     selected_row = record_options[record_to_modify]
 
     # Inputs for editing
