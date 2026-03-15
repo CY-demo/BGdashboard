@@ -341,7 +341,6 @@ st.markdown("""
         align-items: flex-end;
         gap: 20px;
         margin-top: 25px;
-        height: 190px;
     }
     
     .podium-column {
@@ -349,7 +348,6 @@ st.markdown("""
         flex-direction: column;
         align-items: center;
         justify-content: flex-end;
-        height: 100%;
     }
     
     .podium-box {
@@ -366,21 +364,21 @@ st.markdown("""
     }
     
     .podium-1 {
-        height: 110px;
+        height: 130px;
         width: 110px;
         background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
         z-index: 3;
     }
     
     .podium-2 {
-        height: 80px;
+        height: 85px;
         width: 100px;
         background: linear-gradient(135deg, #E0E0E0 0%, #BDBDBD 100%);
         z-index: 2;
     }
     
     .podium-3 {
-        height: 60px;
+        height: 50px;
         width: 100px;
         background: linear-gradient(135deg, #CD7F32 0%, #A0522D 100%);
         z-index: 1;
@@ -407,7 +405,10 @@ st.markdown("""
         font-weight: 500;
         text-align: center;
         line-height: 1.4;
-        min-height: 45px;
+        height: 45px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
     }
     
     /*dropdown box */
