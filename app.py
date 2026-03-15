@@ -13,19 +13,6 @@ from db_manager import get_player_history, get_game_attributes, insert_match_res
 from recommender import Recommender
 
 # -----------------------------------------------------------------------------
-# Temporary Functions
-# -----------------------------------------------------------------------------
-def update_match_result(history_id, new_score, new_is_winner):
-    """Temporary placeholder - replace with real function"""
-    st.warning("Update function not connected to database yet")
-    return False
-
-def delete_match_result(history_id):
-     """Temporary placeholder - replace with real function"""
-     st.warning("delete function not connected to database yet")
-     return False
-
-# -----------------------------------------------------------------------------
 # Setup
 # -----------------------------------------------------------------------------
 st.set_page_config(page_title="BoardGame Recommender", layout="wide", initial_sidebar_state="collapsed")
