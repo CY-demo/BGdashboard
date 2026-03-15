@@ -9,7 +9,7 @@ Run with: streamlit run app.py
 """
 
 import streamlit as st
-from db_manager import get_player_history, get_game_attributes, insert_match_result, delete_match_result, update_match_result
+from db_manager import get_player_history, get_game_attributes, insert_match_result, delete_match_result, update_match_result, delete_player
 from recommender import Recommender
 
 # -----------------------------------------------------------------------------
@@ -300,8 +300,18 @@ with col_data:
         st.warning("Please select or enter a player name to continue.")
         st.stop()
 
-    # Show history
-    st.markdown(f"### History for **{current_player}**")
+    # Show history header and Delete Player button side by side
+    header_col, del_col = st.columns([3, 1])
+    with header_col:
+        st.markdown(f"### History for **{current_player}**")
+    with del_col:
+        if current_player != "-- Create New Player --":
+            if st.button("🗑 Delete Player", key=f"del_player_btn"):
+                if delete_player(current_player):
+                    st.success(f"Player {current_player} deleted.")
+                    st.rerun()
+                else:
+                    st.error("Failed to delete.")
 
     player_history_df = get_player_history(current_player)
     

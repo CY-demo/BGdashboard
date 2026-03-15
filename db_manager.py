@@ -117,6 +117,17 @@ def get_player_history(player_name=None):
         df['score'] = df['score'].astype(object)
         df['score'] = df['score'].where(pd.notnull(df['score']), None)
 
+        # Convert 'played_at' from UTC to PST (US/Pacific)
+        if 'played_at' in df.columns:
+            df['played_at'] = pd.to_datetime(df['played_at'])
+            if df['played_at'].dt.tz is None:
+                # If naive, assume it's UTC from the DB, then convert to PST
+                df['played_at'] = df['played_at'].dt.tz_localize('UTC').dt.tz_convert('US/Pacific')
+            else:
+                df['played_at'] = df['played_at'].dt.tz_convert('US/Pacific')
+            # Format back to a clean string for UI
+            df['played_at'] = df['played_at'].dt.strftime('%Y-%m-%d %H:%M:%S PST')
+
         return df
 
     except Error as e:
@@ -226,6 +237,40 @@ def delete_match_result(history_id):
         return True
     except Error as e:
         print(f"Error deleting match: {e}")
+        return False
+    finally:
+        if connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def delete_player(player_name):
+    """Deletes a player and all their associated match history from the database."""
+    connection = get_db_connection()
+    if not connection:
+        return False
+
+    try:
+        cursor = connection.cursor()
+        
+        # 1. Look up player_id
+        cursor.execute("SELECT player_id FROM players WHERE player_name = %s", (player_name,))
+        row = cursor.fetchone()
+        if not row:
+            print(f"⚠️ Player '{player_name}' not found.")
+            return False
+            
+        player_id = row[0]
+        
+        # 2. Delete their history first (to respect foreign key constraints)
+        cursor.execute("DELETE FROM player_history WHERE player_id = %s", (player_id,))
+        
+        # 3. Delete the player
+        cursor.execute("DELETE FROM players WHERE player_id = %s", (player_id,))
+        
+        connection.commit()
+        return True
+    except Error as e:
+        print(f"Error deleting player: {e}")
         return False
     finally:
         if connection and connection.is_connected():
