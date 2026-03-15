@@ -61,21 +61,21 @@ with dash_col1:
                         <div class="podium-rank">🥈</div>
                         <div class="podium-name">{p2['player_name']}</div>
                     </div>
-                    <div class="podium-stats">{p2['wins']}W{s2}</div>
+                    <div class="podium-stats">Win: {p2['wins']}{s2}</div>
                 </div>
                 <div class="podium-column">
                     <div class="podium-box podium-1">
                         <div class="podium-rank">🥇</div>
                         <div class="podium-name">{p1['player_name']}</div>
                     </div>
-                    <div class="podium-stats">{p1['wins']}W{s1}</div>
+                    <div class="podium-stats">Win: {p1['wins']}{s1}</div>
                 </div>
                 <div class="podium-column">
                     <div class="podium-box podium-3">
                         <div class="podium-rank">🥉</div>
                         <div class="podium-name">{p3['player_name']}</div>
                     </div>
-                    <div class="podium-stats">{p3['wins']}W{s3}</div>
+                    <div class="podium-stats">Win: {p3['wins']}{s3}</div>
                 </div>
             </div>
             """
@@ -473,7 +473,7 @@ with col_data:
             # Show top 3 by win count
             win_counts = wins_df.groupby('game_name').size().reset_index(name='wins').sort_values('wins', ascending=False).head(3)
             for _, row in win_counts.iterrows():
-                st.markdown(f"- **{row['game_name']}** — *{row['wins']} Wins* 👑")
+                st.markdown(f"- **{row['game_name']}** — *Win: {row['wins']}* 👑")
 
     st.divider()
 
