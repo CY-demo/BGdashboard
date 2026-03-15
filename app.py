@@ -57,23 +57,23 @@ with dash_col1:
             podium_html = f"""
             <div class="podium-container">
                 <div class="podium-column">
+                    <div class="podium-name-top">{p2['player_name']}</div>
                     <div class="podium-box podium-2">
                         <div class="podium-rank">🥈</div>
-                        <div class="podium-name">{p2['player_name']}</div>
                     </div>
                     <div class="podium-stats">Win: {p2['wins']}{s2}</div>
                 </div>
                 <div class="podium-column">
+                    <div class="podium-name-top">{p1['player_name']}</div>
                     <div class="podium-box podium-1">
                         <div class="podium-rank">🥇</div>
-                        <div class="podium-name">{p1['player_name']}</div>
                     </div>
                     <div class="podium-stats">Win: {p1['wins']}{s1}</div>
                 </div>
                 <div class="podium-column">
+                    <div class="podium-name-top">{p3['player_name']}</div>
                     <div class="podium-box podium-3">
                         <div class="podium-rank">🥉</div>
-                        <div class="podium-name">{p3['player_name']}</div>
                     </div>
                     <div class="podium-stats">Win: {p3['wins']}{s3}</div>
                 </div>
@@ -391,9 +391,13 @@ st.markdown("""
         margin-bottom: 5px;
     }
     
-    .podium-name {
+    .podium-name-top {
         font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+        text-align: center;
         word-wrap: break-word;
+        max-width: 110px;
     }
     
     .podium-stats {
