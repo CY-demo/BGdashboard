@@ -50,26 +50,32 @@ with dash_col1:
             p2 = top_players[1]
             p3 = top_players[2]
             
-            s1 = f"<br>{p1['highest_score']} pts" if p1['highest_score'] is not None else ""
-            s2 = f"<br>{p2['highest_score']} pts" if p2['highest_score'] is not None else ""
-            s3 = f"<br>{p3['highest_score']} pts" if p3['highest_score'] is not None else ""
+            s1 = f"<br>Score: {p1['highest_score']}" if p1['highest_score'] is not None else ""
+            s2 = f"<br>Score: {p2['highest_score']}" if p2['highest_score'] is not None else ""
+            s3 = f"<br>Score: {p3['highest_score']}" if p3['highest_score'] is not None else ""
             
             podium_html = f"""
             <div class="podium-container">
-                <div class="podium-box podium-2">
-                    <div class="podium-rank">🥈</div>
-                    <div class="podium-name">{p2['player_name']}</div>
-                    <div class="podium-score">{p2['wins']}W{s2}</div>
+                <div class="podium-column">
+                    <div class="podium-box podium-2">
+                        <div class="podium-rank">🥈</div>
+                        <div class="podium-name">{p2['player_name']}</div>
+                    </div>
+                    <div class="podium-stats">{p2['wins']}W{s2}</div>
                 </div>
-                <div class="podium-box podium-1">
-                    <div class="podium-rank">🥇</div>
-                    <div class="podium-name">{p1['player_name']}</div>
-                    <div class="podium-score">{p1['wins']}W{s1}</div>
+                <div class="podium-column">
+                    <div class="podium-box podium-1">
+                        <div class="podium-rank">🥇</div>
+                        <div class="podium-name">{p1['player_name']}</div>
+                    </div>
+                    <div class="podium-stats">{p1['wins']}W{s1}</div>
                 </div>
-                <div class="podium-box podium-3">
-                    <div class="podium-rank">🥉</div>
-                    <div class="podium-name">{p3['player_name']}</div>
-                    <div class="podium-score">{p3['wins']}W{s3}</div>
+                <div class="podium-column">
+                    <div class="podium-box podium-3">
+                        <div class="podium-rank">🥉</div>
+                        <div class="podium-name">{p3['player_name']}</div>
+                    </div>
+                    <div class="podium-stats">{p3['wins']}W{s3}</div>
                 </div>
             </div>
             """
@@ -333,9 +339,17 @@ st.markdown("""
         display: flex;
         justify-content: center;
         align-items: flex-end;
-        gap: 15px;
-        margin-top: 20px;
-        height: 180px;
+        gap: 20px;
+        margin-top: 25px;
+        height: 190px;
+    }
+    
+    .podium-column {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        height: 100%;
     }
     
     .podium-box {
@@ -352,21 +366,21 @@ st.markdown("""
     }
     
     .podium-1 {
-        height: 140px;
+        height: 110px;
         width: 110px;
         background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
         z-index: 3;
     }
     
     .podium-2 {
-        height: 110px;
+        height: 80px;
         width: 100px;
         background: linear-gradient(135deg, #E0E0E0 0%, #BDBDBD 100%);
         z-index: 2;
     }
     
     .podium-3 {
-        height: 90px;
+        height: 60px;
         width: 100px;
         background: linear-gradient(135deg, #CD7F32 0%, #A0522D 100%);
         z-index: 1;
@@ -382,10 +396,14 @@ st.markdown("""
         word-wrap: break-word;
     }
     
-    .podium-score {
-        font-size: 0.9rem;
-        opacity: 0.9;
-        margin-top: auto;
+    .podium-stats {
+        margin-top: 8px;
+        font-size: 0.95rem;
+        color: #555;
+        font-weight: 500;
+        text-align: center;
+        line-height: 1.4;
+        min-height: 45px;
     }
     
     /*dropdown box */
