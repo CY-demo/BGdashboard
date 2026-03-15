@@ -137,6 +137,72 @@ def get_player_history(player_name=None):
         if connection and connection.is_connected():
             connection.close()
 
+def get_top_games(limit=3):
+    """Returns the most played games across all players."""
+    connection = get_db_connection()
+    if not connection:
+        return []
+
+    try:
+        query = """
+            SELECT g.name as game_name, COUNT(ph.history_id) as play_count
+            FROM player_history ph
+            JOIN games g ON ph.game_id = g.game_id
+            GROUP BY g.game_id
+            ORDER BY play_count DESC
+            LIMIT %s
+        """
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(query, (limit,))
+        return cursor.fetchall()
+    except Error as e:
+        print(f"Error fetching top games: {e}")
+        return []
+    finally:
+        if connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+            
+def get_recent_activity(limit=5):
+    """Returns the most recent matches played across all players."""
+    connection = get_db_connection()
+    if not connection:
+        return []
+
+    try:
+        query = """
+            SELECT p.player_name, g.name as game_name, ph.score, ph.is_winner, ph.created_at as played_at
+            FROM player_history ph
+            JOIN players p ON ph.player_id = p.player_id
+            JOIN games g ON ph.game_id = g.game_id
+            ORDER BY ph.created_at DESC
+            LIMIT %s
+        """
+        df = pd.read_sql(query, connection, params=(limit,))
+        if df.empty:
+            return []
+            
+        # Ensure empty scores are None, not NaN floats
+        df['score'] = df['score'].astype(object)
+        df['score'] = df['score'].where(pd.notnull(df['score']), None)
+            
+        # Timezone conversion for display
+        if 'played_at' in df.columns:
+            df['played_at'] = pd.to_datetime(df['played_at'])
+            if df['played_at'].dt.tz is None:
+                df['played_at'] = df['played_at'].dt.tz_localize('UTC').dt.tz_convert('US/Pacific')
+            else:
+                df['played_at'] = df['played_at'].dt.tz_convert('US/Pacific')
+            df['played_at'] = df['played_at'].dt.strftime('%H:%M PST')
+            
+        return df.to_dict('records')
+    except Error as e:
+        print(f"Error fetching recent activity: {e}")
+        return []
+    finally:
+        if connection and connection.is_connected():
+            connection.close()
+
 
 def _fallback_local_history_df(player_name=None):
     """Fallback mock dataframe for development / offline mode."""
@@ -277,6 +343,33 @@ def delete_player(player_name):
             cursor.close()
             connection.close()
 
+
+def get_top_players_for_game(game_id, limit=3):
+    """Returns the top players for a specific game based on win count (or score if win count ties)."""
+    connection = get_db_connection()
+    if not connection:
+        return []
+        
+    try:
+        query = """
+            SELECT p.player_name, COUNT(ph.history_id) as wins, MAX(ph.score) as highest_score
+            FROM player_history ph
+            JOIN players p ON ph.player_id = p.player_id
+            WHERE ph.game_id = %s AND ph.is_winner = 1
+            GROUP BY p.player_id
+            ORDER BY wins DESC, highest_score DESC
+            LIMIT %s
+        """
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(query, (game_id, limit))
+        return cursor.fetchall()
+    except Error as e:
+        print(f"Error fetching top players for game: {e}")
+        return []
+    finally:
+        if connection and connection.is_connected():
+            cursor.close()
+            connection.close()
 
 # ── Quick connection test ──────────────────────────────────────────────────────
 if __name__ == "__main__":

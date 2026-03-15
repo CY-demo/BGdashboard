@@ -9,7 +9,7 @@ Run with: streamlit run app.py
 """
 
 import streamlit as st
-from db_manager import get_player_history, get_game_attributes, insert_match_result, delete_match_result, update_match_result, delete_player
+from db_manager import get_player_history, get_game_attributes, insert_match_result, delete_match_result, update_match_result, delete_player, get_top_games, get_top_players_for_game, get_recent_activity
 from recommender import Recommender
 
 # -----------------------------------------------------------------------------
@@ -20,6 +20,47 @@ st.title("BoardGame Recommender")
 
 GAME_ATTRIBUTES = get_game_attributes()
 available_games = list(GAME_ATTRIBUTES.keys())
+
+# -----------------------------------------------------------------------------
+# Community Dashboard
+# -----------------------------------------------------------------------------
+st.markdown("## 🌍 Community Dashboard")
+dash_col1, dash_col2 = st.columns([1, 1])
+
+with dash_col1:
+    st.markdown("### 🔥 Most Popular Game")
+    # Get just the #1 most played game
+    top_games = get_top_games(1)
+    if not top_games:
+        st.info("No games played yet.")
+    else:
+        top_game = top_games[0]
+        st.markdown(f"#### **{top_game['game_name']}** (*{top_game['play_count']} total plays*)")
+        
+        st.markdown("🏆 **Top Champions:**")
+        top_players = get_top_players_for_game(top_game['game_id'], 3)
+        if not top_players:
+            st.write("  No winners recorded yet.")
+        else:
+            for i, p in enumerate(top_players):
+                score_text = f" (Highest Score: {p['highest_score']})" if p['highest_score'] is not None else ""
+                st.markdown(f"**#{i+1}** {p['player_name']} — *{p['wins']} Wins*{score_text}")
+
+with dash_col2:
+    st.markdown("### 📡 Recent Activity Feed")
+    recent = get_recent_activity(5)
+    if not recent:
+        st.info("No activity yet.")
+    else:
+        for row in recent:
+            # Map SQL tinyint to boolean for the check
+            is_win = bool(row['is_winner'])
+            result = "🏆 Won" if is_win else "Played"
+            # Format score if exists
+            score_text = f" (Score: {int(row['score'])})" if row['score'] is not None else ""
+            st.markdown(f"⏱️ *{row['played_at']}* | **{row['player_name']}** {result} **{row['game_name']}**{score_text}")
+
+st.divider()
 
 col_data, col_ml = st.columns([1, 1])
 
