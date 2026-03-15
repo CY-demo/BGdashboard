@@ -300,27 +300,25 @@ with col_data:
         st.warning("Please select or enter a player name to continue.")
         st.stop()
 
-    # Show history header and Delete Player button side by side
-    header_col, del_col = st.columns([3, 1])
-    with header_col:
-        st.markdown(f"### History for **{current_player}**")
-    with del_col:
-        if current_player != "-- Create New Player --":
-            if st.button("🗑 Delete Player", key=f"del_player_btn"):
-                if delete_player(current_player):
-                    st.success(f"Player {current_player} deleted.")
-                    st.rerun()
-                else:
-                    st.error("Failed to delete.")
+    # Show history header
+    st.markdown(f"### History for **{current_player}**")
 
     player_history_df = get_player_history(current_player)
     
     if player_history_df.empty:
         st.info("No play history found.")
     else:
-        # Display score as '-' if it is None
+        # Display score as '-' if it is None, and map winner to emoji
         display_df = player_history_df[['game_name', 'score', 'is_winner']].copy()
         display_df['score'] = display_df['score'].fillna("-")
+        display_df['is_winner'] = display_df['is_winner'].map({True: "👑", False: ""})
+        
+        # Rename columns for better presentation
+        display_df = display_df.rename(columns={
+            "game_name": "Game",
+            "score": "Score",
+            "is_winner": "Winner"
+        })
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
     st.divider()
@@ -403,6 +401,16 @@ if not player_history_df.empty:
                 st.rerun()
             else:
                 st.error("Failed to delete record.")
+                
+    st.divider()
+    st.markdown("### Danger Zone")
+    if current_player != "-- Create New Player --":
+        if st.button("🗑 Delete Entire Player Profile", key=f"del_player_btn", type="primary"):
+            if delete_player(current_player):
+                st.success(f"Player {current_player} deleted.")
+                st.rerun()
+            else:
+                st.error("Failed to delete.")
 
 # -----------------------------------------------------------------------------
 # Right Column: ML Engine
