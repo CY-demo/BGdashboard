@@ -311,7 +311,7 @@ with col_data:
         # Display score as '-' if it is None, and map winner to emoji
         display_df = player_history_df[['game_name', 'score', 'is_winner']].copy()
         display_df['score'] = display_df['score'].fillna("-")
-        display_df['is_winner'] = display_df['is_winner'].map({True: "👑", False: ""})
+        display_df['is_winner'] = display_df['is_winner'].map({1: "👑", 0: "", True: "👑", False: ""})
         
         # Rename columns for better presentation
         display_df = display_df.rename(columns={
