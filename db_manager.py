@@ -46,7 +46,7 @@ def get_game_attributes():
     """
     connection = get_db_connection()
     if not connection:
-        return _fallback_local_games_json()
+        return {}
 
     try:
         cursor = connection.cursor(dictionary=True)
@@ -54,7 +54,7 @@ def get_game_attributes():
         records = cursor.fetchall()
 
         if not records:
-            return _fallback_local_games_json()
+            return {}
 
         game_dict = {}
         for row in records:
@@ -66,21 +66,14 @@ def get_game_attributes():
 
     except Error as e:
         print(f"Error fetching game attributes: {e}")
-        return _fallback_local_games_json()
+        return {}
     finally:
         if connection and connection.is_connected():
             cursor.close()
             connection.close()
 
 
-def _fallback_local_games_json():
-    """Fallback to local JSON if DB fails / is empty during development."""
-    print("⚠️ [DB Warning] Falling back to local games.json")
-    try:
-        with open('data/games.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception:
-        return {}
+
 
 # ── Player History ─────────────────────────────────────────────────────────────
 
@@ -91,7 +84,7 @@ def get_player_history(player_name=None):
     """
     connection = get_db_connection()
     if not connection:
-        return _fallback_local_history_df(player_name)
+        return pd.DataFrame()
 
     try:
         base_query = """
@@ -111,7 +104,7 @@ def get_player_history(player_name=None):
         df = pd.read_sql(query, connection, params=params)
 
         if df.empty:
-            return _fallback_local_history_df(player_name)
+            return pd.DataFrame()
 
         # Ensure empty scores (NULL in DB) are treated properly, not as NaN floats
         df['score'] = df['score'].astype(object)
@@ -132,7 +125,7 @@ def get_player_history(player_name=None):
 
     except Error as e:
         print(f"Error fetching history: {e}")
-        return _fallback_local_history_df(player_name)
+        return pd.DataFrame()
     finally:
         if connection and connection.is_connected():
             connection.close()
@@ -204,17 +197,7 @@ def get_recent_activity(limit=5):
             connection.close()
 
 
-def _fallback_local_history_df(player_name=None):
-    """Fallback mock dataframe for development / offline mode."""
-    mock_history = [
-        {"history_id": 1, "player_name": "Alice", "game_name": "Catan",     "score": 10, "is_winner": True,  "played_at": "2025-03-01"},
-        {"history_id": 2, "player_name": "Alice", "game_name": "7 Wonders", "score": 50, "is_winner": False, "played_at": "2025-03-02"},
-        {"history_id": 3, "player_name": "Bob",   "game_name": "Dixit",     "score": 3,  "is_winner": True,  "played_at": "2025-03-03"},
-    ]
-    df = pd.DataFrame(mock_history)
-    if player_name:
-        df = df[df["player_name"] == player_name]
-    return df
+
 
 # ── CRUD Operations ────────────────────────────────────────────────────────────
 
