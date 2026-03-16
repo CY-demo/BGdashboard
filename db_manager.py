@@ -7,7 +7,6 @@ import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
 import pandas as pd
-import json
 import streamlit as st
 
 # Load environment variables from .env file

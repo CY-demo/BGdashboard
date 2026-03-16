@@ -8,6 +8,8 @@ and displays real-time ML board game recommendations.
 Run with: streamlit run app.py
 """
 
+import os
+import html
 import streamlit as st
 from db_manager import get_player_history, get_game_attributes, insert_match_result, delete_match_result, update_match_result, delete_player, get_top_games, get_top_players_for_game, get_recent_activity
 from recommender import Recommender
@@ -24,7 +26,6 @@ available_games = list(GAME_ATTRIBUTES.keys())
 # -----------------------------------------------------------------------------
 # Admin Login
 # -----------------------------------------------------------------------------
-import os
 st.sidebar.markdown("### 🔒 Admin Login")
 admin_password = st.sidebar.text_input("Enter password to edit data", type="password")
 
@@ -74,24 +75,29 @@ with dash_col1:
             s2 = f"<br>Score: {p2['highest_score']}" if p2['highest_score'] is not None else ""
             s3 = f"<br>Score: {p3['highest_score']}" if p3['highest_score'] is not None else ""
             
+            # Secure against XSS injections from user-generated player names
+            name1 = html.escape(str(p1['player_name']))
+            name2 = html.escape(str(p2['player_name']))
+            name3 = html.escape(str(p3['player_name']))
+            
             podium_html = f"""
             <div class="podium-container">
                 <div class="podium-column">
-                    <div class="podium-name-top">{p2['player_name']}</div>
+                    <div class="podium-name-top">{name2}</div>
                     <div class="podium-box podium-2">
                         <div class="podium-rank">🥈</div>
                     </div>
                     <div class="podium-stats">Win: {p2['wins']}{s2}</div>
                 </div>
                 <div class="podium-column">
-                    <div class="podium-name-top">{p1['player_name']}</div>
+                    <div class="podium-name-top">{name1}</div>
                     <div class="podium-box podium-1">
                         <div class="podium-rank">🥇</div>
                     </div>
                     <div class="podium-stats">Win: {p1['wins']}{s1}</div>
                 </div>
                 <div class="podium-column">
-                    <div class="podium-name-top">{p3['player_name']}</div>
+                    <div class="podium-name-top">{name3}</div>
                     <div class="podium-box podium-3">
                         <div class="podium-rank">🥉</div>
                     </div>
