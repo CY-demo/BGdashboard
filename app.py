@@ -631,7 +631,16 @@ with col_ml:
             if not recommendations:
                 st.warning("All available games played.")
             else:
-                st.success("Analysis Complete")
+                st.success("根據你過去的戰績，我已經做出以下分析：")
+                
+                # Show Player Trait Box
+                traits = rec_engine.get_player_traits(current_player)
+                st.markdown(f"""
+                <div style="padding:15px; border-radius:12px; border-left: 5px solid #FFD700; background-color: #FFFDF0; margin-bottom:20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                    <h3 style="margin:0 0 5px 0; color: #D4AF37;">🌟 {traits['title']}</h3>
+                    <p style="margin:0; color: #666; font-size: 1.05rem;">{traits['desc']}</p>
+                </div>
+                """, unsafe_allow_html=True)
                 
                 for i, rec_dict in enumerate(recommendations):
                     game_name = rec_dict["game"]

@@ -92,6 +92,32 @@ class Recommender:
             for game, sim in zip(recommended_games, similarity_scores)
         ]
 
+    def get_player_traits(self, player_name: str) -> dict:
+        """
+        Analyses the player's profile and returns a descriptive trait based on their highest feature weight.
+        """
+        try:
+            profile = self._build_player_profile(player_name)
+            max_idx = np.argmax(profile)
+            top_feature = FEATURE_KEYS[max_idx]
+
+            traits_map = {
+                "strategy": {"title": "You are a Strategist! 🧠", "desc": "You carefully plan every move to ensure absolute victory."},
+                "luck": {"title": "You are lucky! 🎲", "desc": "You thrive in chaos and trust your luck to carry the day!"},
+                "negotiation": {"title": "You are a Negotiator! 🗣️", "desc": "You are a master of words, talking your way into the lead."},
+                "deduction": {"title": "You are a Detective! 🔍", "desc": "Nothing escapes your keen eye and logical mind."},
+                "deck_building": {"title": "You are an Engine Builder! ⚙️", "desc": "You love creating powerful combos and efficient systems."},
+                "cooperation": {"title": "You are a Collaborator! 🤝", "desc": "You are a great team player who brings everyone together."},
+                "complexity": {"title": "You are brave! 🧩", "desc": "You love diving into deep, complex game mechanics!"},
+                "duration_norm": {"title": "You are an Endurance Gamer! ⏱️", "desc": "You have the patience and focus for epic, long-lasting games."}
+            }
+
+            return traits_map.get(top_feature, {"title": "You are a Versatile Gamer! 🎮", "desc": "You have a balanced and adaptable playstyle."})
+
+        except Exception as e:
+            return {"title": "You are a Mystery Gamer! 🕵️", "desc": "Your playstyle is truly unpredictable!"}
+
+
     def _build_player_profile(self, player_name: str) -> np.ndarray:
         """
         Player profile = weighted average of game feature vectors.
