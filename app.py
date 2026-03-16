@@ -462,15 +462,14 @@ st.markdown("""
 # Left Column: DB CRUD
 # -----------------------------------------------------------------------------
 with col_data:
-    st.header("Manage Play History")
+    st.markdown("<h2 style='text-align: center; margin-bottom: 20px;'>Who is playing?</h2>", unsafe_allow_html=True)
     
-    st.markdown("### Player Select")
     history_df = get_player_history()
     existing_players = []
     if not history_df.empty:
         existing_players = history_df["player_name"].unique().tolist()
         
-    current_player = st.selectbox("Who is playing?", existing_players + ["-- Create New Player --"])
+    current_player = st.selectbox("Select or Create Player", existing_players + ["-- Create New Player --"])
     
     if current_player == "-- Create New Player --":
         current_player = st.text_input("Enter new player name:")
@@ -547,7 +546,7 @@ with col_data:
      # Edit/Delete
 if not player_history_df.empty:
     if st.session_state.get("is_admin", False):
-        st.markdown("### ⚙️ Manage History")
+        st.markdown("### ⚙️ Manage Play History")
         
         # Render the full dataframe table for editing
         display_df = player_history_df[['game_name', 'score', 'is_winner', 'played_at']].copy()
