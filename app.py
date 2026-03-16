@@ -614,7 +614,7 @@ if not player_history_df.empty:
 # Right Column: ML Engine
 # -----------------------------------------------------------------------------
 with col_ml:
-    st.header("ML Recommendations")
+    st.header("You may like")
     
     fresh_history_df = get_player_history()
     
