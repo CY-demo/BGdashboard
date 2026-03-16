@@ -469,10 +469,12 @@ with col_data:
     if not history_df.empty:
         existing_players = history_df["player_name"].unique().tolist()
         
-    current_player = st.selectbox("Select or Create Player", existing_players + ["-- Create New Player --"])
+    current_player = st.selectbox("Select Player", existing_players)
     
-    if current_player == "-- Create New Player --":
-        current_player = st.text_input("Enter new player name:")
+    if st.session_state.get("is_admin", False):
+        new_p = st.text_input("Or enter a new player name to create/select:")
+        if new_p.strip():
+            current_player = new_p.strip()
         
     if not current_player:
         st.warning("Please select or enter a player name to continue.")
@@ -613,7 +615,7 @@ if not player_history_df.empty:
 # Right Column: ML Engine
 # -----------------------------------------------------------------------------
 with col_ml:
-    st.header("You may like")
+    st.markdown("<h2 style='text-align: center; margin-bottom: 20px;'>You may like...</h2>", unsafe_allow_html=True)
     
     fresh_history_df = get_player_history()
     
