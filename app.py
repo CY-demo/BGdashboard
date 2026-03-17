@@ -635,14 +635,22 @@ with col_ml:
                 
                 # Show Player Trait Box
                 traits = rec_engine.get_player_traits(current_player)
+                
+                # Use .get() to avoid KeyError 'person' or others
+                t_title = traits.get('title', 'You are a Versatile Gamer! 🎮')
+                t_desc = traits.get('desc', 'You have a balanced and adaptable playstyle.')
+                t_person = traits.get('person', 'Unknown')
+                t_status = traits.get('status', 'A mysterious figure in history.')
+                t_quote = traits.get('quote', '"Success is not final, failure is not fatal."')
+                
                 st.markdown(f"""
                 <div style="padding:15px; border-radius:12px; border-left: 5px solid #FFD700; background-color: #FFFDF0; margin-bottom:20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                    <h3 style="margin:0 0 10px 0; color: #D4AF37;">🌟 {traits['title']}</h3>
-                    <p style="margin:0 0 10px 0; color: #555; font-size: 1.05rem;">{traits['desc']}</p>
+                    <h3 style="margin:0 0 10px 0; color: #D4AF37;">🌟 {t_title}</h3>
+                    <p style="margin:0 0 10px 0; color: #555; font-size: 1.05rem;">{t_desc}</p>
                     <div style="padding-top: 10px; border-top: 1px dashed #E0D3A8;">
-                        <p style="margin:0 0 5px 0; color: #3E5641; font-weight: 600;">Historical Match: {traits['person']}</p>
-                        <p style="margin:0 0 5px 0; color: #777; font-size: 0.95rem;"><i>{traits['status']}</i></p>
-                        <p style="margin:0; color: #A67C5D; font-style: italic; font-weight: 500;">{traits['quote']}</p>
+                        <p style="margin:0 0 5px 0; color: #3E5641; font-weight: 600;">Historical Match: {t_person}</p>
+                        <p style="margin:0 0 5px 0; color: #777; font-size: 0.95rem;"><i>{t_status}</i></p>
+                        <p style="margin:0; color: #A67C5D; font-style: italic; font-weight: 500;">{t_quote}</p>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)

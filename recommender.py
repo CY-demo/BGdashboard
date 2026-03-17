@@ -160,13 +160,28 @@ class Recommender:
                 }
             }
 
-            return traits_map.get(top_feature, {
+            # Fallback for individual missing keys within a valid top_feature dict
+            result = traits_map.get(top_feature, {
                 "title": "You are a Versatile Gamer! 🎮", 
                 "desc": "You have a balanced and adaptable playstyle.",
                 "person": "Leonardo da Vinci",
                 "status": "The ultimate Renaissance man with endless curiosity and versatile skills.",
                 "quote": '"Learning never exhausts the mind."'
             })
+
+            # Ensure all keys are present even if some entries are partially missing
+            defaults = {
+                "title": "Board Gamer",
+                "desc": "You enjoy playing games!",
+                "person": "Unknown",
+                "status": "A mysterious player.",
+                "quote": '"Victory belongs to the most persevering."'
+            }
+            for k, v in defaults.items():
+                if k not in result:
+                    result[k] = v
+            
+            return result
 
         except Exception as e:
             return {
