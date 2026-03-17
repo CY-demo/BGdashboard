@@ -146,13 +146,6 @@ class Recommender:
                     "status": "A legendary fictional detective synonymous with logical reasoning.",
                     "quote": '"When you have eliminated the impossible, whatever remains, must be the truth."'
                 },
-                "deck_building": {
-                    "title": "Efficiency Architect ⚙️", 
-                    "desc": "You love creating powerful combos and efficient systems.",
-                    "person": "Henry Ford",
-                    "status": "Father of the modern assembly line, perfecting the art of building efficient systems.",
-                    "quote": '"Nothing is particularly hard if you divide it into small jobs."'
-                },
                 "cooperation": {
                     "title": "Unifying Leader 🤝", 
                     "desc": "You are a great team player who brings everyone together.",
@@ -166,13 +159,6 @@ class Recommender:
                     "person": "Albert Einstein",
                     "status": "Greatest physicist in history, whose mind processed the deepest complexities.",
                     "quote": '"Out of complexity, find simplicity."'
-                },
-                "duration_norm": {
-                    "title": "Endurance Veteran ⏱️", 
-                    "desc": "You have the patience and focus for epic, long-lasting games.",
-                    "person": "Nelson Mandela",
-                    "status": "Father of the Nation in South Africa, showing ultimate human endurance.",
-                    "quote": '"It always seems impossible until it\'s done."'
                 }
             }
 
@@ -191,10 +177,8 @@ class Recommender:
                     "luck": "Intuitive timing",
                     "negotiation": "Social influence",
                     "deduction": "Analytical depth",
-                    "deck_building": "Systematic growth",
                     "cooperation": "Team harmony",
-                    "complexity": "Technical mastery",
-                    "duration_norm": "Exceptional focus"
+                    "complexity": "Technical mastery"
                 }
                 sec_desc = sec_titles.get(secondary_feature, "versatility")
                 result["desc"] += f" Furthermore, your profile shows strong **{sec_desc}**."
