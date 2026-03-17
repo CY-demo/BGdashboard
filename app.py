@@ -534,13 +534,27 @@ with col_data:
                 
                 st.success("Based on your tracking data, here is your analysis:")
                 
-                # --- Radar Chart (Octagon) ---
-                metrics = rec_engine.get_player_profile_metrics(current_player)
-                categories = list(metrics.keys())
-                values = list(metrics.values())
+                # --- Radar Chart (Hexagon - 6 Attributes) ---
+                all_metrics = rec_engine.get_player_profile_metrics(current_player)
+                target_features = ["strategy", "luck", "negotiation", "deduction", "cooperation", "complexity"]
+                
+                # Filter and reorder categories
+                categories = []
+                values = []
+                for feat in target_features:
+                    if feat in all_metrics:
+                        # Prettify labels
+                        label = feat.replace('_', ' ').title()
+                        categories.append(label)
+                        values.append(all_metrics[feat])
+                
                 # Close the loop
-                categories += [categories[0]]
-                values += [values[0]]
+                if categories:
+                    categories += [categories[0]]
+                    values += [values[0]]
+                else:
+                    st.info("No data available for the radar chart.")
+                    st.stop()
 
                 fig = go.Figure()
                 fig.add_trace(go.Scatterpolar(
@@ -562,7 +576,7 @@ with col_data:
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)'
                 )
-                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                st.plotly_chart(fig, use_container_width=True, config={'staticPlot': True})
 
                 st.markdown(f"""
                 <div style="padding:15px; border-radius:12px; border-left: 5px solid #FFD700; background-color: #FFFDF0; margin-bottom:10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
