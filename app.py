@@ -25,11 +25,28 @@ GAME_ATTRIBUTES = get_game_attributes()
 available_games = list(GAME_ATTRIBUTES.keys())
 
 # -----------------------------------------------------------------------------
-# Admin Settings
+# Admin Login (Secure via Env Var)
 # -----------------------------------------------------------------------------
-# Password requirement removed as per request. Admin mode is enabled by default.
-st.session_state["is_admin"] = True
-# To manage this via .env in the future, use: os.getenv("ADMIN_PASSWORD")
+st.sidebar.markdown("### 🔒 Admin Login")
+# Fetch password from environment (Cloud Secrets or .env)
+env_password = os.getenv("ADMIN_PASSWORD")
+
+if not env_password:
+    st.sidebar.warning("⚠️ ADMIN_PASSWORD not set in environment.")
+    admin_input = st.sidebar.text_input("Enter password", type="password", disabled=True)
+    st.session_state["is_admin"] = False
+else:
+    admin_input = st.sidebar.text_input("Enter password to edit data", type="password")
+    if admin_input == env_password:
+        st.session_state["is_admin"] = True
+        st.sidebar.success("Admin mode unlocked.")
+    elif admin_input:
+        st.session_state["is_admin"] = False
+        st.sidebar.error("Incorrect password.")
+    else:
+        st.session_state["is_admin"] = False
+
+st.sidebar.markdown("---")
 
 # -----------------------------------------------------------------------------
 # Community Dashboard
