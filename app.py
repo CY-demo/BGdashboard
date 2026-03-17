@@ -631,7 +631,7 @@ with col_ml:
             if not recommendations:
                 st.warning("All available games played.")
             else:
-                st.success("根據你過去的戰績，我已經做出以下分析：")
+                st.success("Based on your tracking data, here is your analysis:")
                 
                 # Show Player Trait Box
                 traits = rec_engine.get_player_traits(current_player)
