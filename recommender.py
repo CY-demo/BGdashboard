@@ -100,16 +100,23 @@ class Recommender:
         try:
             profile = self._build_player_profile(player_name)
             
-            # Sort features by weight descending
-            sorted_indices = np.argsort(profile)[::-1]
-            top_idx = sorted_indices[0]
+            # We only consider 6 specific features for personality (exclude deck_building and duration)
+            target_features = ["strategy", "luck", "negotiation", "deduction", "cooperation", "complexity"]
+            feature_to_idx = {feat: i for i, feat in enumerate(FEATURE_KEYS)}
+            target_indices = [feature_to_idx[f] for f in target_features]
+            
+            # Filter profile to only target features and sort
+            target_weights = profile[target_indices]
+            sorted_target_indices = np.argsort(target_weights)[::-1]
+            
+            top_idx = target_indices[sorted_target_indices[0]]
             top_feature = FEATURE_KEYS[top_idx]
             
-            # Identify secondary feature if it's significant (at least 70% of the top feature's weight)
             secondary_feature = None
-            if len(sorted_indices) > 1:
-                if profile[sorted_indices[1]] > 0.7 * profile[top_idx]:
-                    secondary_feature = FEATURE_KEYS[sorted_indices[1]]
+            if len(sorted_target_indices) > 1:
+                # If secondary is at least 70% of the top among the 6 targets
+                if target_weights[sorted_target_indices[1]] > 0.7 * target_weights[sorted_target_indices[0]]:
+                    secondary_feature = FEATURE_KEYS[target_indices[sorted_target_indices[1]]]
             traits_map = {
                 "strategy": {
                     "title": "Master Strategist 🧠", 
