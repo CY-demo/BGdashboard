@@ -25,23 +25,11 @@ GAME_ATTRIBUTES = get_game_attributes()
 available_games = list(GAME_ATTRIBUTES.keys())
 
 # -----------------------------------------------------------------------------
-# Admin Login
+# Admin Settings
 # -----------------------------------------------------------------------------
-st.sidebar.markdown("### 🔒 Admin Login")
-admin_password = st.sidebar.text_input("Enter password to edit data", type="password")
-
-CORRECT_PASSWORD = os.getenv("ADMIN_PASSWORD", "ntu123") 
-
-if admin_password == CORRECT_PASSWORD:
-    st.session_state["is_admin"] = True
-    st.sidebar.success("Admin mode unlocked. You can now modify data.")
-elif admin_password:
-    st.session_state["is_admin"] = False
-    st.sidebar.error("Incorrect password.")
-else:
-    st.session_state["is_admin"] = False
-
-st.sidebar.markdown("---")
+# Password requirement removed as per request. Admin mode is enabled by default.
+st.session_state["is_admin"] = True
+# To manage this via .env in the future, use: os.getenv("ADMIN_PASSWORD")
 
 # -----------------------------------------------------------------------------
 # Community Dashboard
