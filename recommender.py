@@ -102,20 +102,80 @@ class Recommender:
             top_feature = FEATURE_KEYS[max_idx]
 
             traits_map = {
-                "strategy": {"title": "You are a Strategist! 🧠", "desc": "You carefully plan every move to ensure absolute victory."},
-                "luck": {"title": "You are lucky! 🎲", "desc": "You thrive in chaos and trust your luck to carry the day!"},
-                "negotiation": {"title": "You are a Negotiator! 🗣️", "desc": "You are a master of words, talking your way into the lead."},
-                "deduction": {"title": "You are a Detective! 🔍", "desc": "Nothing escapes your keen eye and logical mind."},
-                "deck_building": {"title": "You are an Engine Builder! ⚙️", "desc": "You love creating powerful combos and efficient systems."},
-                "cooperation": {"title": "You are a Collaborator! 🤝", "desc": "You are a great team player who brings everyone together."},
-                "complexity": {"title": "You are brave! 🧩", "desc": "You love diving into deep, complex game mechanics!"},
-                "duration_norm": {"title": "You are an Endurance Gamer! ⏱️", "desc": "You have the patience and focus for epic, long-lasting games."}
+                "strategy": {
+                    "title": "You are a Strategist! 🧠", 
+                    "desc": "You carefully plan every move to ensure absolute victory.",
+                    "person": "Sun Tzu",
+                    "status": "Famous ancient Chinese military strategist and author of The Art of War.",
+                    "quote": '"Know yourself and know your enemy, and you will never be defeated."'
+                },
+                "luck": {
+                    "title": "You are lucky! 🎲", 
+                    "desc": "You thrive in chaos and trust your luck to carry the day!",
+                    "person": "Napoleon Bonaparte",
+                    "status": "French Emperor who famously demanded 'lucky generals' over 'good ones'.",
+                    "quote": '"I\'d rather have lucky generals than good ones."'
+                },
+                "negotiation": {
+                    "title": "You are a Negotiator! 🗣️", 
+                    "desc": "You are a master of words, talking your way into the lead.",
+                    "person": "Theodore Roosevelt",
+                    "status": "26th US President, known for his 'Big Stick' diplomatic style and mastery of negotiation.",
+                    "quote": '"Speak softly and carry a big stick; you will go far."'
+                },
+                "deduction": {
+                    "title": "You are a Detective! 🔍", 
+                    "desc": "Nothing escapes your keen eye and logical mind.",
+                    "person": "Sherlock Holmes",
+                    "status": "A legendary fictional detective synonymous with logical reasoning and deduction.",
+                    "quote": '"When you have eliminated the impossible, whatever remains, however improbable, must be the truth."'
+                },
+                "deck_building": {
+                    "title": "You are an Engine Builder! ⚙️", 
+                    "desc": "You love creating powerful combos and efficient systems.",
+                    "person": "Henry Ford",
+                    "status": "Father of the modern assembly line, perfecting the art of building efficient systems.",
+                    "quote": '"Nothing is particularly hard if you divide it into small jobs."'
+                },
+                "cooperation": {
+                    "title": "You are a Collaborator! 🤝", 
+                    "desc": "You are a great team player who brings everyone together.",
+                    "person": "Mahatma Gandhi",
+                    "status": "Leader of the Indian independence movement, known for his nonviolent resistance and uniting people.",
+                    "quote": '"In a gentle way, you can shake the world."'
+                },
+                "complexity": {
+                    "title": "You are brave! 🧩", 
+                    "desc": "You love diving into deep, complex game mechanics!",
+                    "person": "Albert Einstein",
+                    "status": "One of the greatest physicists in history, whose mind famously processed the deepest complexities of the universe.",
+                    "quote": '"Out of complexity, find simplicity."'
+                },
+                "duration_norm": {
+                    "title": "You are an Endurance Gamer! ⏱️", 
+                    "desc": "You have the patience and focus for epic, long-lasting games.",
+                    "person": "Nelson Mandela",
+                    "status": "Father of the Nation in South Africa, whose 27 years in prison showed ultimate human endurance and sense of purpose.",
+                    "quote": '"It always seems impossible until it\'s done."'
+                }
             }
 
-            return traits_map.get(top_feature, {"title": "You are a Versatile Gamer! 🎮", "desc": "You have a balanced and adaptable playstyle."})
+            return traits_map.get(top_feature, {
+                "title": "You are a Versatile Gamer! 🎮", 
+                "desc": "You have a balanced and adaptable playstyle.",
+                "person": "Leonardo da Vinci",
+                "status": "The ultimate Renaissance man with endless curiosity and versatile skills.",
+                "quote": '"Learning never exhausts the mind."'
+            })
 
         except Exception as e:
-            return {"title": "You are a Mystery Gamer! 🕵️", "desc": "Your playstyle is truly unpredictable!"}
+            return {
+                "title": "You are a Mystery Gamer! 🕵️", 
+                "desc": "Your playstyle is truly unpredictable!",
+                "person": "Unknown",
+                "status": "A legendary enigma whose actions defy all analytical models.",
+                "quote": '"The true mystery of the world is the visible, not the invisible."'
+            }
 
 
     def _build_player_profile(self, player_name: str) -> np.ndarray:
