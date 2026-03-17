@@ -460,17 +460,29 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# Left Column: DB CRUD
+# Data Loading & ML Engine Initialization (Optimized)
 # -----------------------------------------------------------------------------
+history_df = get_player_history() # Cached
+rec_engine = None
+existing_players = []
+if not history_df.empty:
+    existing_players = history_df["player_name"].unique().tolist()
+
+# -----------------------------------------------------------------------------
+# Main Columns
+# -----------------------------------------------------------------------------
+col_data, col_ml = st.columns([1, 1], gap="large")
+
 with col_data:
     st.markdown("<h2 style='text-align: center; margin-bottom: 20px;'>Who is playing?</h2>", unsafe_allow_html=True)
-    
-    history_df = get_player_history()
-    existing_players = []
-    if not history_df.empty:
-        existing_players = history_df["player_name"].unique().tolist()
-        
     current_player = st.selectbox("Select Player", existing_players)
+    
+    # Initialize Recommender once for use in both columns
+    if current_player and not history_df.empty:
+        try:
+            rec_engine = Recommender(history_df, game_attrs=GAME_ATTRIBUTES)
+        except:
+             pass
     
     if st.session_state.get("is_admin", False):
         new_p = st.text_input("Or enter a new player name to create/select:")
@@ -509,10 +521,8 @@ with col_data:
                 st.markdown(f"- **{row['game_name']} — *Win: {row['wins']}* 👑**")
 
         # --- Personality Analysis (Moved to Profile) ---
-        all_history_df = get_player_history() # Need full history for recommender
-        if not all_history_df.empty:
+        if rec_engine:
             try:
-                rec_engine = Recommender(all_history_df, game_attrs=GAME_ATTRIBUTES)
                 traits = rec_engine.get_player_traits(current_player)
                 
                 # Use .get() to avoid KeyError 'person' or others
@@ -661,38 +671,33 @@ with col_data:
 with col_ml:
     st.markdown("<h2 style='text-align: center; margin-bottom: 20px;'>You may like...</h2>", unsafe_allow_html=True)
     
-    fresh_history_df = get_player_history()
-    
-    if fresh_history_df.empty or current_player not in fresh_history_df["player_name"].values:
+    if history_df.empty or not current_player:
         st.info("Not enough data to make recommendations. Please add at least 1 game to your history.")
     else:
         try:
-            # We already initialized rec_engine in the left column if possible
-            # But we redefine it here just in case or keep it scoped locally
-            rec_engine = Recommender(fresh_history_df, game_attrs=GAME_ATTRIBUTES)
-            
-            with st.spinner('Calculating...'):
-                recommendations = rec_engine.recommend(current_player, top_n=5)
-            
-            if not recommendations:
-                st.warning("All available games played.")
-            else:
-                for i, rec_dict in enumerate(recommendations):
-                    game_name = rec_dict["game"]
-                    match_score = rec_dict["score"]
-                    
-                    stats = GAME_ATTRIBUTES.get(game_name, {})
-                    category = stats.get('category', 'Unknown')
-                    complexity = stats.get('complexity', 0)
-                    
-                    st.markdown(f"""
-                    <div style="padding:15px; border-radius:10px; border:1px solid #ddd; margin-bottom:10px; background-color: #f8f9fa;">
-                        <h3 style="margin:0; color: #1E88E5;">#{i+1}. {game_name}</h3>
-                        <p style="margin:5px 0 0 0; color: #555;">
-                            <b>Match Score:</b> {int(match_score * 100)}% | <b>Category:</b> {category} | <b>Complexity:</b> {int(complexity * 100)}%
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
+            if rec_engine:
+                with st.spinner('Calculating...'):
+                    recommendations = rec_engine.recommend(current_player, top_n=5)
+                
+                if not recommendations:
+                    st.warning("All available games played.")
+                else:
+                    for i, rec_dict in enumerate(recommendations):
+                        game_name = rec_dict["game"]
+                        match_score = rec_dict["score"]
+                        
+                        stats = GAME_ATTRIBUTES.get(game_name, {})
+                        category = stats.get('category', 'Unknown')
+                        complexity = stats.get('complexity', 0)
+                        
+                        st.markdown(f"""
+                        <div style="padding:15px; border-radius:10px; border:1px solid #ddd; margin-bottom:10px; background-color: #f8f9fa;">
+                            <h3 style="margin:0; color: #1E88E5;">#{i+1}. {game_name}</h3>
+                            <p style="margin:5px 0 0 0; color: #555;">
+                                <b>Match Score:</b> {int(match_score * 100)}% | <b>Category:</b> {category} | <b>Complexity:</b> {int(complexity * 100)}%
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
                                 
         except Exception as e:
             st.error(f"Error: {e}")

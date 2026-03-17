@@ -76,6 +76,7 @@ def get_game_attributes():
 
 # ── Player History ─────────────────────────────────────────────────────────────
 
+@st.cache_data(ttl=600)
 def get_player_history(player_name=None):
     """
     Retrieves match history via JOIN across players, games, player_history.
@@ -129,6 +130,7 @@ def get_player_history(player_name=None):
         if connection and connection.is_connected():
             connection.close()
 
+@st.cache_data(ttl=600)
 def get_top_games(limit=3):
     """Returns the most played games across all players."""
     connection = get_db_connection()
@@ -155,6 +157,7 @@ def get_top_games(limit=3):
             cursor.close()
             connection.close()
             
+@st.cache_data(ttl=600)
 def get_recent_activity(limit=5):
     """Returns the most recent matches played across all players."""
     connection = get_db_connection()
@@ -235,6 +238,7 @@ def insert_match_result(player_name, game_name, score, is_winner):
             (player_id, game_id, sql_score, 1 if is_winner else 0)
         )
         connection.commit()
+        st.cache_data.clear() # Clear cache on data modification
         return True
 
     except Error as e:
@@ -262,6 +266,7 @@ def update_match_result(history_id, new_score, new_is_winner):
             (sql_score, 1 if new_is_winner else 0, history_id)
         )
         connection.commit()
+        st.cache_data.clear() # Clear cache on data modification
         return True
     except Error as e:
         print(f"Error updating match: {e}")
@@ -282,6 +287,7 @@ def delete_match_result(history_id):
         cursor = connection.cursor()
         cursor.execute("DELETE FROM player_history WHERE history_id = %s", (history_id,))
         connection.commit()
+        st.cache_data.clear() # Clear cache on data modification
         return True
     except Error as e:
         print(f"Error deleting match: {e}")
@@ -316,6 +322,7 @@ def delete_player(player_name):
         cursor.execute("DELETE FROM players WHERE player_id = %s", (player_id,))
         
         connection.commit()
+        st.cache_data.clear() # Clear cache on data modification
         return True
     except Error as e:
         print(f"Error deleting player: {e}")
