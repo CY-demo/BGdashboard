@@ -545,6 +545,9 @@ with col_data:
                     if feat in all_metrics:
                         # Prettify labels
                         label = feat.replace('_', ' ').title()
+                        # Override Complexity label as requested
+                        if label == "Complexity":
+                            label = "Organization"
                         categories.append(label)
                         values.append(all_metrics[feat])
                 
