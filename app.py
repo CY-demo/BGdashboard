@@ -505,7 +505,36 @@ with col_data:
             # Show top 3 by win count
             win_counts = wins_df.groupby('game_name').size().reset_index(name='wins').sort_values('wins', ascending=False).head(3)
             for _, row in win_counts.iterrows():
-                st.markdown(f"- **{row['game_name']}** — *Win: {row['wins']}* 👑")
+                st.markdown(f"- **{row['game_name']} — *Win: {row['wins']}* 👑**")
+
+        # --- Personality Analysis (Moved to Profile) ---
+        all_history_df = get_player_history() # Need full history for recommender
+        if not all_history_df.empty:
+            try:
+                rec_engine = Recommender(all_history_df, game_attrs=GAME_ATTRIBUTES)
+                traits = rec_engine.get_player_traits(current_player)
+                
+                # Use .get() to avoid KeyError 'person' or others
+                t_title = traits.get('title', 'You are a Versatile Gamer! 🎮')
+                t_desc = traits.get('desc', 'You have a balanced and adaptable playstyle.')
+                t_person = traits.get('person', 'Unknown')
+                t_status = traits.get('status', 'A mysterious figure in history.')
+                t_quote = traits.get('quote', '"Success is not final, failure is not fatal."')
+                
+                st.success("Based on your tracking data, here is your analysis:")
+                st.markdown(f"""
+                <div style="padding:15px; border-radius:12px; border-left: 5px solid #FFD700; background-color: #FFFDF0; margin-bottom:10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                    <h3 style="margin:0 0 10px 0; color: #D4AF37;">🌟 {t_title}</h3>
+                    <p style="margin:0 0 10px 0; color: #555; font-size: 1.05rem;">{t_desc}</p>
+                    <div style="padding-top: 10px; border-top: 1px dashed #E0D3A8;">
+                        <p style="margin:0 0 5px 0; color: #3E5641; font-weight: 600;">Historical Match: {t_person}</p>
+                        <p style="margin:0 0 5px 0; color: #777; font-size: 0.95rem;"><i>{t_status}</i></p>
+                        <p style="margin:0; color: #A67C5D; font-style: italic; font-weight: 500;">{t_quote}</p>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Analysis error: {e}")
 
     st.divider()
 
@@ -623,6 +652,8 @@ with col_ml:
         st.info("Not enough data to make recommendations. Please add at least 1 game to your history.")
     else:
         try:
+            # We already initialized rec_engine in the left column if possible
+            # But we redefine it here just in case or keep it scoped locally
             rec_engine = Recommender(fresh_history_df, game_attrs=GAME_ATTRIBUTES)
             
             with st.spinner('Calculating...'):
@@ -631,30 +662,6 @@ with col_ml:
             if not recommendations:
                 st.warning("All available games played.")
             else:
-                st.success("Based on your tracking data, here is your analysis:")
-                
-                # Show Player Trait Box
-                traits = rec_engine.get_player_traits(current_player)
-                
-                # Use .get() to avoid KeyError 'person' or others
-                t_title = traits.get('title', 'You are a Versatile Gamer! 🎮')
-                t_desc = traits.get('desc', 'You have a balanced and adaptable playstyle.')
-                t_person = traits.get('person', 'Unknown')
-                t_status = traits.get('status', 'A mysterious figure in history.')
-                t_quote = traits.get('quote', '"Success is not final, failure is not fatal."')
-                
-                st.markdown(f"""
-                <div style="padding:15px; border-radius:12px; border-left: 5px solid #FFD700; background-color: #FFFDF0; margin-bottom:20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                    <h3 style="margin:0 0 10px 0; color: #D4AF37;">🌟 {t_title}</h3>
-                    <p style="margin:0 0 10px 0; color: #555; font-size: 1.05rem;">{t_desc}</p>
-                    <div style="padding-top: 10px; border-top: 1px dashed #E0D3A8;">
-                        <p style="margin:0 0 5px 0; color: #3E5641; font-weight: 600;">Historical Match: {t_person}</p>
-                        <p style="margin:0 0 5px 0; color: #777; font-size: 0.95rem;"><i>{t_status}</i></p>
-                        <p style="margin:0; color: #A67C5D; font-style: italic; font-weight: 500;">{t_quote}</p>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
                 for i, rec_dict in enumerate(recommendations):
                     game_name = rec_dict["game"]
                     match_score = rec_dict["score"]
