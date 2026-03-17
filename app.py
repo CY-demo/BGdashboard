@@ -11,6 +11,7 @@ Run with: streamlit run app.py
 import os
 import html
 import streamlit as st
+import plotly.graph_objects as go
 from db_manager import get_player_history, get_game_attributes, insert_match_result, delete_match_result, update_match_result, delete_player, get_top_games, get_top_players_for_game, get_recent_activity
 from recommender import Recommender
 
@@ -522,6 +523,37 @@ with col_data:
                 t_quote = traits.get('quote', '"Success is not final, failure is not fatal."')
                 
                 st.success("Based on your tracking data, here is your analysis:")
+                
+                # --- Radar Chart (Octagon) ---
+                metrics = rec_engine.get_player_profile_metrics(current_player)
+                categories = list(metrics.keys())
+                values = list(metrics.values())
+                # Close the loop
+                categories += [categories[0]]
+                values += [values[0]]
+
+                fig = go.Figure()
+                fig.add_trace(go.Scatterpolar(
+                    r=values,
+                    theta=categories,
+                    fill='toself',
+                    name='Player Profile',
+                    line_color='#FFD700',
+                    fillcolor='rgba(255, 215, 0, 0.3)'
+                ))
+                fig.update_layout(
+                    polar=dict(
+                        radialaxis=dict(visible=True, range=[0, 1], showticklabels=False),
+                        bgcolor='rgba(0,0,0,0)'
+                    ),
+                    showlegend=False,
+                    margin=dict(l=40, r=40, t=20, b=20),
+                    height=300,
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)'
+                )
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
                 st.markdown(f"""
                 <div style="padding:15px; border-radius:12px; border-left: 5px solid #FFD700; background-color: #FFFDF0; margin-bottom:10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
                     <h3 style="margin:0 0 10px 0; color: #D4AF37;">🌟 {t_title}</h3>
@@ -538,16 +570,19 @@ with col_data:
 
     st.divider()
 
+    st.divider()
+
+    # -----------------------------------------------------------------------------
+    # Admin Section: Grouped for visibility control
+    # -----------------------------------------------------------------------------
     if st.session_state.get("is_admin", False):
-        # Create new record
-        st.markdown("### ➕ Add New Match Result")
+        st.markdown("## 🛠 Admin Controls")
         
+        # 1. Add New Match Result
+        st.markdown("### ➕ Add New Match Result")
         with st.form("add_match_form", clear_on_submit=True):
-            # Add a placeholder option at the top so it doesn't default to the first game
             game_options = ["-- Select a Game --"] + available_games
             new_game = st.selectbox("Select Board Game", game_options)
-            
-            # Use text_input instead of number_input to allow empty values
             new_score_raw = st.text_input("Your Score (Leave empty for win/loss only games)", value="")
             new_is_winner = st.checkbox("Did you win?")
     
@@ -556,8 +591,6 @@ with col_data:
                 if new_game == "-- Select a Game --":
                     st.warning("Please select a game first.")
                     st.stop()
-                    
-                # Parse score: None if empty, integer if valid number
                 parsed_score = None
                 if new_score_raw.strip():
                     try:
@@ -565,80 +598,62 @@ with col_data:
                     except ValueError:
                         st.error("Score must be a number or left empty.")
                         st.stop()
-                        
                 if insert_match_result(current_player, new_game, parsed_score, new_is_winner):
                     st.success(f"Successfully added {new_game} to history!")
-                    st.rerun()  # refresh the page
+                    st.rerun()
                 else:
                     st.error("Failed to save to database")
-    else:
-        st.info("🔒 ***Admin mode required***: Please enter the admin password in the left sidebar to add match results.")
-          
-     # Edit/Delete
-if not player_history_df.empty:
-    if st.session_state.get("is_admin", False):
-        st.markdown("### ⚙️ Manage Play History")
-        
-        # Render the full dataframe table for editing
-        display_df = player_history_df[['game_name', 'score', 'is_winner', 'played_at']].copy()
-        display_df['score'] = display_df['score'].fillna("-")
-        display_df['is_winner'] = display_df['is_winner'].map({1: "👑", 0: "", True: "👑", False: ""})
-        display_df = display_df.rename(columns={"game_name": "Game", "score": "Score", "is_winner": "Winner", "played_at": "Date"})
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
-        
-        # Sort by played_at / session_date
-        player_history_df_sorted = player_history_df.sort_values("played_at", ascending=False)
-    
-        # Build options for the selectbox
-        record_options = {
-            f"{row['game_name']} - {row['played_at']} (Score: {row['score'] if row['score'] is not None else '-'}) {'🏆' if row['is_winner'] else ''}": row
-            for _, row in player_history_df_sorted.iterrows()
-        }
-    
-        record_to_modify = st.selectbox("Select record to modify or delete:", list(record_options.keys()))
-        selected_row = record_options[record_to_modify]
-    
-        # Inputs for editing
-        current_score_str = str(int(selected_row['score'])) if selected_row['score'] is not None else ""
-        edit_score_raw = st.text_input("Update Score (Leave empty for win/loss only games)", value=current_score_str, key=f"score_{selected_row['history_id']}")
-        edit_is_winner = st.checkbox("Did you win?", value=bool(selected_row['is_winner']), key=f"winner_{selected_row['history_id']}")
-    
-        # Buttons for saving or deleting (outside form)
-        edit_col1, edit_col2 = st.columns(2)
-        with edit_col1:
-            if st.button("Save Changes", key=f"save_{selected_row['history_id']}"):
-                parsed_edit_score = None
-                if edit_score_raw.strip():
-                    try:
-                        parsed_edit_score = int(edit_score_raw)
-                    except ValueError:
-                        st.error("Score must be a number or left empty.")
-                        st.stop()
-                        
-                if update_match_result(selected_row['history_id'], parsed_edit_score, edit_is_winner):
-                    st.success(f"Successfully updated {selected_row['game_name']} record!")
-                    st.rerun()
-                else:
-                    st.error("Failed to update record.")
-        with edit_col2:
-            if st.button("🗑 Delete Record", key=f"delete_{selected_row['history_id']}"):
-                if delete_match_result(selected_row['history_id']):
-                    st.success(f"Successfully deleted {selected_row['game_name']} record!")
-                    st.rerun()
-                else:
-                    st.error("Failed to delete record.")
-                    
+
         st.divider()
-        st.markdown("### ⚠️ Danger Zone")
-        if current_player != "-- Create New Player --":
-            if st.button("🗑 Delete Entire Player Profile", key=f"del_player_btn", type="primary"):
-                if delete_player(current_player):
-                    st.success(f"Player {current_player} deleted.")
-                    st.rerun()
-                else:
-                    st.error("Failed to delete.")
-    else:
-        st.info("🔒 ***Admin mode required***: Please enter the admin password in the left sidebar to edit or delete match history.")
+
+        # 2. Manage Play History
+        if not player_history_df.empty:
+            st.markdown("### ⚙️ Manage Play History")
+            display_df = player_history_df[['game_name', 'score', 'is_winner', 'played_at']].copy()
+            display_df['score'] = display_df['score'].fillna("-")
+            display_df['is_winner'] = display_df['is_winner'].map({1: "👑", 0: "", True: "👑", False: ""})
+            display_df = display_df.rename(columns={"game_name": "Game", "score": "Score", "is_winner": "Winner", "played_at": "Date"})
+            st.dataframe(display_df, use_container_width=True, hide_index=True)
+            
+            player_history_df_sorted = player_history_df.sort_values("played_at", ascending=False)
+            record_options = {
+                f"{row['game_name']} - {row['played_at']} (Score: {row['score'] if row['score'] is not None else '-'}) {'🏆' if row['is_winner'] else ''}": row
+                for _, row in player_history_df_sorted.iterrows()
+            }
+            record_to_modify = st.selectbox("Select record to modify or delete:", list(record_options.keys()))
+            selected_row = record_options[record_to_modify]
+            current_score_str = str(int(selected_row['score'])) if selected_row['score'] is not None else ""
+            edit_score_raw = st.text_input("Update Score", value=current_score_str, key=f"score_{selected_row['history_id']}")
+            edit_is_winner = st.checkbox("Did you win?", value=bool(selected_row['is_winner']), key=f"winner_{selected_row['history_id']}")
+            
+            edit_col1, edit_col2 = st.columns(2)
+            with edit_col1:
+                if st.button("Save Changes", key=f"save_{selected_row['history_id']}"):
+                    parsed_edit_score = None
+                    if edit_score_raw.strip():
+                        try:
+                            parsed_edit_score = int(edit_score_raw)
+                        except ValueError:
+                            st.error("Score must be a number.")
+                            st.stop()
+                    if update_match_result(selected_row['history_id'], parsed_edit_score, edit_is_winner):
+                        st.success("Successfully updated record!")
+                        st.rerun()
+            with edit_col2:
+                if st.button("🗑 Delete Record", key=f"delete_{selected_row['history_id']}"):
+                    if delete_match_result(selected_row['history_id']):
+                        st.success("Successfully deleted record!")
+                        st.rerun()
+
+            st.divider()
+            st.markdown("### ⚠️ Danger Zone")
+            if current_player != "-- Create New Player --":
+                if st.button("🗑 Delete Entire Player Profile", key="del_player_btn", type="primary"):
+                    if delete_player(current_player):
+                        st.success(f"Player {current_player} deleted.")
+                        st.rerun()
+                    else:
+                        st.error("Failed to delete.")
 
 # -----------------------------------------------------------------------------
 # Right Column: ML Engine

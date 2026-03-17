@@ -193,6 +193,17 @@ class Recommender:
             }
 
 
+    def get_player_profile_metrics(self, player_name: str) -> dict:
+        """
+        Returns the raw normalized profile vector as a dictionary mapped to FEATURE_KEYS.
+        """
+        try:
+            profile = self._build_player_profile(player_name)
+            return {FEATURE_KEYS[i]: float(profile[i]) for i in range(len(FEATURE_KEYS))}
+        except Exception:
+            return {k: 0.0 for k in FEATURE_KEYS}
+
+
     def _build_player_profile(self, player_name: str) -> np.ndarray:
         """
         Player profile = weighted average of game feature vectors.
