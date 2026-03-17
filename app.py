@@ -532,7 +532,7 @@ with col_data:
                 t_status = traits.get('status', 'A mysterious figure in history.')
                 t_quote = traits.get('quote', '"Success is not final, failure is not fatal."')
                 
-                st.success("Analysis Ready (Hexagon Mode): Based on your tracking data, here is your analysis:")
+                st.success("Based on your tracking data, here is your analysis:")
                 
                 # --- Radar Chart (Hexagon - 6 Attributes) ---
                 all_metrics = rec_engine.get_player_profile_metrics(current_player)
