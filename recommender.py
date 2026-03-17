@@ -95,79 +95,105 @@ class Recommender:
     def get_player_traits(self, player_name: str) -> dict:
         """
         Analyses the player's profile and returns a descriptive trait based on their highest feature weight.
+        Includes secondary trait logic for more professional variety.
         """
         try:
             profile = self._build_player_profile(player_name)
-            max_idx = np.argmax(profile)
-            top_feature = FEATURE_KEYS[max_idx]
+            
+            # Sort features by weight descending
+            sorted_indices = np.argsort(profile)[::-1]
+            top_idx = sorted_indices[0]
+            top_feature = FEATURE_KEYS[top_idx]
+            
+            # Identify secondary feature if it's significant (at least 70% of the top feature's weight)
+            secondary_feature = None
+            if len(sorted_indices) > 1:
+                if profile[sorted_indices[1]] > 0.7 * profile[top_idx]:
+                    secondary_feature = FEATURE_KEYS[sorted_indices[1]]
 
             traits_map = {
                 "strategy": {
-                    "title": "You are a Strategist! 🧠", 
+                    "title": "Master Strategist 🧠", 
                     "desc": "You carefully plan every move to ensure absolute victory.",
                     "person": "Sun Tzu",
                     "status": "Famous ancient Chinese military strategist and author of The Art of War.",
                     "quote": '"Know yourself and know your enemy, and you will never be defeated."'
                 },
                 "luck": {
-                    "title": "You are lucky! 🎲", 
+                    "title": "Fortune's Favorite 🎲", 
                     "desc": "You thrive in chaos and trust your luck to carry the day!",
                     "person": "Napoleon Bonaparte",
                     "status": "French Emperor who famously demanded 'lucky generals' over 'good ones'.",
                     "quote": '"I\'d rather have lucky generals than good ones."'
                 },
                 "negotiation": {
-                    "title": "You are a Negotiator! 🗣️", 
+                    "title": "Diplomatic Envoy 🗣️", 
                     "desc": "You are a master of words, talking your way into the lead.",
                     "person": "Theodore Roosevelt",
-                    "status": "26th US President, known for his 'Big Stick' diplomatic style and mastery of negotiation.",
+                    "status": "26th US President, known for his 'Big Stick' diplomatic style.",
                     "quote": '"Speak softly and carry a big stick; you will go far."'
                 },
                 "deduction": {
-                    "title": "You are a Detective! 🔍", 
+                    "title": "Keen Analyst 🔍", 
                     "desc": "Nothing escapes your keen eye and logical mind.",
                     "person": "Sherlock Holmes",
-                    "status": "A legendary fictional detective synonymous with logical reasoning and deduction.",
-                    "quote": '"When you have eliminated the impossible, whatever remains, however improbable, must be the truth."'
+                    "status": "A legendary fictional detective synonymous with logical reasoning.",
+                    "quote": '"When you have eliminated the impossible, whatever remains, must be the truth."'
                 },
                 "deck_building": {
-                    "title": "You are an Engine Builder! ⚙️", 
+                    "title": "Efficiency Architect ⚙️", 
                     "desc": "You love creating powerful combos and efficient systems.",
                     "person": "Henry Ford",
                     "status": "Father of the modern assembly line, perfecting the art of building efficient systems.",
                     "quote": '"Nothing is particularly hard if you divide it into small jobs."'
                 },
                 "cooperation": {
-                    "title": "You are a Collaborator! 🤝", 
+                    "title": "Unifying Leader 🤝", 
                     "desc": "You are a great team player who brings everyone together.",
                     "person": "Mahatma Gandhi",
-                    "status": "Leader of the Indian independence movement, known for his nonviolent resistance and uniting people.",
+                    "status": "Leader of the Indian independence movement, known for uniting people.",
                     "quote": '"In a gentle way, you can shake the world."'
                 },
                 "complexity": {
-                    "title": "You are brave! 🧩", 
+                    "title": "Heavy Weight Expert 🧩", 
                     "desc": "You love diving into deep, complex game mechanics!",
                     "person": "Albert Einstein",
-                    "status": "One of the greatest physicists in history, whose mind famously processed the deepest complexities of the universe.",
+                    "status": "Greatest physicist in history, whose mind processed the deepest complexities.",
                     "quote": '"Out of complexity, find simplicity."'
                 },
                 "duration_norm": {
-                    "title": "You are an Endurance Gamer! ⏱️", 
+                    "title": "Endurance Veteran ⏱️", 
                     "desc": "You have the patience and focus for epic, long-lasting games.",
                     "person": "Nelson Mandela",
-                    "status": "Father of the Nation in South Africa, whose 27 years in prison showed ultimate human endurance and sense of purpose.",
+                    "status": "Father of the Nation in South Africa, showing ultimate human endurance.",
                     "quote": '"It always seems impossible until it\'s done."'
                 }
             }
 
-            # Fallback for individual missing keys within a valid top_feature dict
             result = traits_map.get(top_feature, {
-                "title": "You are a Versatile Gamer! 🎮", 
+                "title": "Versatile Competitor 🎮", 
                 "desc": "You have a balanced and adaptable playstyle.",
                 "person": "Leonardo da Vinci",
-                "status": "The ultimate Renaissance man with endless curiosity and versatile skills.",
+                "status": "The ultimate Renaissance man with versatile skills.",
                 "quote": '"Learning never exhausts the mind."'
-            })
+            }).copy()
+
+            # Append secondary trait mention if present
+            if secondary_feature:
+                sec_titles = {
+                    "strategy": "Strategic thinking",
+                    "luck": "Intuitive timing",
+                    "negotiation": "Social influence",
+                    "deduction": "Analytical depth",
+                    "deck_building": "Systematic growth",
+                    "cooperation": "Team harmony",
+                    "complexity": "Technical mastery",
+                    "duration_norm": "Exceptional focus"
+                }
+                sec_desc = sec_titles.get(secondary_feature, "versatility")
+                result["desc"] += f" Furthermore, your profile shows strong **{sec_desc}**."
+            
+            return result
 
             # Ensure all keys are present even if some entries are partially missing
             defaults = {
