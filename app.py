@@ -723,9 +723,3 @@ with col_ml:
                                 
         except Exception as e:
             st.error(f"Error: {e}")
-
-# -----------------------------------------------------------------------------
-# Footer / Version Marker
-# -----------------------------------------------------------------------------
-st.markdown("---")
-st.caption("🚀 **BoardGame Recommender v2.2** | *Hexagon Layout & Organization Label & Secure Admin Mode*")
