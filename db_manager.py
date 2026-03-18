@@ -13,7 +13,12 @@ import streamlit as st
 load_dotenv()
 
 DB_HOST     = os.getenv("DB_HOST", "localhost")
-DB_PORT     = int(os.getenv("DB_PORT", "3306"))
+_db_port_raw = os.getenv("DB_PORT", "4000") # TiDB default is often 4000
+try:
+    DB_PORT = int(_db_port_raw) if _db_port_raw and _db_port_raw.strip() else 4000
+except ValueError:
+    DB_PORT = 4000
+
 DB_NAME     = os.getenv("DB_NAME", "")
 DB_USER     = os.getenv("DB_USER", "")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
